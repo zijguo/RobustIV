@@ -3,11 +3,10 @@ This package provides functions for robust inference in the presence of potentia
 
 
 ## Installation
-'''
-# install.packages("devtools")
-library(devtools)
-devtools::install_github("https://github.com/zijguo/RobustIV")
-'''
+The package can be installed from Github using the following code:
+    # install.packages("devtools")
+    library(devtools)
+    devtools::install_github("https://github.com/zijguo/RobustIV")
 
 
 ## Examples
