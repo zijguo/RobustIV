@@ -4,14 +4,12 @@
 \alias{pretest}
 \title{Prestest estimator}
 \usage{
-pretest(outcome.formula, treatment.formula, verbose = FALSE)
+pretest(outcome.formula, treatment.formula)
 }
 \arguments{
 \item{outcome.formula}{formula specification(s) of the regression relationship between outcome, covariates and the endogeneity variables, such as \code{Y ~ X + D + g_2(D) + ... + g_k(D)}.}
 
 \item{treatment.formula}{formula specification(s) of the regression relationship between endogeneity variables, covariates and the instrumental variables, such as \code{D ~ X + Z + h_2(Z) + ... + h_k(Z)}.}
-
-\item{verbose}{a boolean scalar indicating to indicate the test result or not, with default FALSE.}
 }
 \value{
 \item{\code{coefficients}}{scalar numeric value: the estimate of the treatment effect}

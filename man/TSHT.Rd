@@ -4,7 +4,17 @@
 \alias{TSHT}
 \title{Two-Stage Hard Thresholding}
 \usage{
-TSHT(Y, D, Z, X, intercept = TRUE, alpha = 0.05, tuning = 2.01, method = "OLS")
+TSHT(
+  Y,
+  D,
+  Z,
+  X,
+  intercept = TRUE,
+  alpha = 0.05,
+  tuning = 2.01,
+  method = "OLS",
+  max_clique = FALSE
+)
 }
 \arguments{
 \item{Y}{continuous and non-missing, n by 1 numeric outcome vector.}
@@ -22,6 +32,8 @@ TSHT(Y, D, Z, X, intercept = TRUE, alpha = 0.05, tuning = 2.01, method = "OLS")
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
 \item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".}
+
+\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
@@ -34,7 +46,7 @@ TSHT(Y, D, Z, X, intercept = TRUE, alpha = 0.05, tuning = 2.01, method = "OLS")
 Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
 }
 \examples{
-\dontrun{
+\donttest{
 ### Working Low Dimensional Example ###
 library(RobustIV)
 library(MASS)
@@ -46,6 +58,7 @@ epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
 D = 0.5 + Z \%*\% gamma + epsilon[,1]
 Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
 TSHT(Y,D,Z)
+TSHT(Y,D,Z,max_clique=TRUE)
 
 
 ### Working High Dimensional Example ###
@@ -61,6 +74,7 @@ epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
 D =  0.5 + Z \%*\% gamma + epsilon[,1]
 Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
 TSHT(Y,D,Z,method="DeLasso")
+TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
 }
 
 

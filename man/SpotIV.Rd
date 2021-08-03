@@ -11,7 +11,6 @@ SpotIV(
   X = NULL,
   bs.Niter = 40,
   M = 2,
-  bootstrap = T,
   M.est = T,
   V = NULL,
   intercept = T,
@@ -37,6 +36,8 @@ SpotIV(
 
 \item{M.est}{True or False, whether estimate M based on BIC. Default is True.}
 
+\item{V}{the set of valid IVs for implementing the oracle control function method}
+
 \item{intercept}{a boolean scalar indicating to include the intercept or not. Default is TRUE.}
 
 \item{d1}{a scalar for computing CATE(d1,d2|w0).}
@@ -47,7 +48,7 @@ SpotIV(
 
 \item{bw}{a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
 
-\item{parallel}{True or False indicating whether to use parallel computing (not available on Windows). Default is Flase.}
+\item{parallel}{True or False indicating whether to use parallel computing. Default is False.}
 }
 \value{
 \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
@@ -56,16 +57,14 @@ SpotIV(
     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 }
 \description{
-Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. It depends on R packages "dr" and "orthoDr"; parallel computing depends on R packages "foreach" and "doParallel".
+Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. The parallel computation depends on R packages "foreach" and "doParallel".
 }
 \examples{
-\dontrun{
+\donttest{
 ### Working Low Dimensional Example ###
 library(mvtnorm)
 library(MASS)
 library(Matrix)
-library(dr)
-library(orthoDr)
 n = 500; J = 7; s = 5; d1=-1; d2=1; z0=c(rep(0, J-1),0.1)
 Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
 gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))

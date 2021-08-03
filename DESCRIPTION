@@ -1,15 +1,13 @@
 Package: RobustIV
 Type: Package
 Title: Robust Inference for Causal Effect with Possibly Invalid
-    Instrumental Variables
-Version: 0.1.4
+        Instrumental Variables
+Version: 0.1.6
 Author: Zijian Guo, Hyunseung Kang, Sai Li, Taehyeon Koo, Wei Yuan
 Maintainer: Zijian Guo <zijguo@stat.rutgers.edu>
-Description: This package provides functions for robust inference in the presence of potentially invalid 
-    instrumental variables, including the Two-Stage Hard Thresholding(TSHT) method, the Endogeneity Testing 
-    method, the Control Function method and the Searching and Sampling method.
+Description: This package provides functions for robust inference in the presence of potentially invalid instrumental variables, including the Two-Stage Hard Thresholding(TSHT) method, the Endogeneity test, the Control function method and the Searching and Sampling method.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
-Imports: AER, flare, Formula, glmnet, MASS, Matrix
+Imports: AER, flare, Formula, glmnet, MASS, Matrix, stats, dr, orthoDr, igraph

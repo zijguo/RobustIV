@@ -9,6 +9,7 @@
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".
+#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
 #'
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
@@ -19,7 +20,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' ### Working Low Dimensional Example ###
 #' library(RobustIV)
 #' library(MASS)
@@ -31,6 +32,7 @@
 #' D = 0.5 + Z %*% gamma + epsilon[,1]
 #' Y = -0.5 + Z %*% alpha + D * beta + epsilon[,2]
 #' TSHT(Y,D,Z)
+#' TSHT(Y,D,Z,max_clique=TRUE)
 #'
 #'
 #' ### Working High Dimensional Example ###
@@ -46,44 +48,34 @@
 #' D =  0.5 + Z %*% gamma + epsilon[,1]
 #' Y = -0.5 + Z %*% alpha + D * beta + epsilon[,2]
 #' TSHT(Y,D,Z,method="DeLasso")
+#' TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
 #' }
 #'
 #'
-TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS") {
+TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_clique=FALSE) {
   # Check and Clean Input Type #
   # Check Y
-  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
+  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
-  if (is.vector(Y)) {
-    Y <- cbind(Y)
-  }
   Y = as.numeric(Y)
 
   # Check D
-  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(Y)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
+  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
   stopifnot(all(!is.na(D)))
-  if (is.vector(D)) {
-    D <- cbind(D)
-  }
   D = as.numeric(D)
 
   # Check Z
-  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),is.matrix(Z))
   stopifnot(all(!is.na(Z)))
-  if (is.vector(Z)) {
-    Z <- cbind(Z)
-  }
 
   # Check dimesions
   stopifnot(length(Y) == length(D), length(Y) == nrow(Z))
 
   # Check X, if present
   if(!missing(X)) {
-    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
+    stopifnot((is.numeric(X) || is.logical(X)),is.matrix(X) && nrow(X) == nrow(Z))
     stopifnot(all(!is.na(X)))
-    if (is.vector(X)) {
-      X <- cbind(X)
-    }
+
     W = cbind(Z,X)
   } else {
     W = Z
@@ -107,7 +99,8 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS") {
 
   # Estimate Valid IVs
   SetHats = TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                      SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,tuning=tuning)
+                      SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,tuning=tuning,
+                      max_clique = max_clique)
   VHat = SetHats$VHat; SHat = SetHats$SHat
 
   # Obtain point est, se, and ci
@@ -214,13 +207,16 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param bootstrap a logical value, default by FALSE(What is this for in TSHT.Initial?).
+#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix.
 #'
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #' @export
 #'
-TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FALSE,tuning = 2.01) {
+#' @import igraph
+#'
+TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FALSE,tuning = 2.01,max_clique) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -275,25 +271,34 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
       VHats.boot.sym[i,j]<-min(VHats.bool[i,j],VHats.bool[j,i])
     }
   }
-  # Voting
-  #VM.1 = apply(VHats.bool,1,sum)
-  #VM.2 = apply(VHats.bool,2,sum)
-  #VM<-VM.1
-  #for(l in 1:length(VM.1)){
-  # VM[l]=min(VM.1[l],VM.2[l])
-  #}
-  VM= apply(VHats.boot.sym,1,sum)
-  VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
-  VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
-  V.set<-NULL
-  for(index in union(VM.m,VM.p)){
-    V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
+
+  # maximal clique
+  if (max_clique) {
+    voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
+    max_block <- largest_cliques(voting.graph)
+    VHat <- as_ids(sort(max_block[[1]]))
+    VHat <- as.numeric(VHat) # randomly pick the first one if multiple maximal cliques exist
+  } else {
+    # Voting
+    #VM.1 = apply(VHats.bool,1,sum)
+    #VM.2 = apply(VHats.bool,2,sum)
+    #VM<-VM.1
+    #for(l in 1:length(VM.1)){
+    # VM[l]=min(VM.1[l],VM.2[l])
+    #}
+    VM= apply(VHats.boot.sym,1,sum)
+    VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
+    VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
+    V.set<-NULL
+    for(index in union(VM.m,VM.p)){
+      V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
+    }
+    VHat<-NULL
+    for(index in V.set){
+      VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
+    }
+    VHat=as.numeric(VHat)
   }
-  VHat<-NULL
-  for(index in V.set){
-    VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
-  }
-  VHat=as.numeric(VHat)
 
   # Error check
   if(length(VHat) == 0){
@@ -302,7 +307,12 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
     VHat = 1:pz
   }
 
-  return(list(SHat=SHat,VHat=VHat,V.set=V.set))
+  if (max_clique) {
+    returnList <- list(SHat=SHat,VHat=VHat)
+  } else {
+    returnList <- list(SHat=SHat,VHat=VHat,V.set=V.set)
+  }
+  return(returnList)
 }
 
 

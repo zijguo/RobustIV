@@ -55,7 +55,7 @@ SemiControl.valid<- function(Y, D, Z, bs.Niter=40, intercept=T, d1, d2 , z0, bw=
   asf.dw<- VC.ASF.est(d1=d1,d2=d2, z0=z0, Y, D, v.hat=v.hat,bw.z=bw.z)
   cace.hat = asf.dw$cace.hat #cate
   bw.z=asf.dw$bw.z
-  cat(bw.z,'\n')
+  # cat(bw.z,'\n')
   ####bootstrap####
   boot_b<-list()
   for(i in 1: bs.Niter){
