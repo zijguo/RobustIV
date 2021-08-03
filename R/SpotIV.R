@@ -1,35 +1,36 @@
 #' @title SpotIV method for causal inference in nonlinear outcome models
-#' @description Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. It depends on R packages "dr" and "orthoDr"; parallel computing depends on R packages "foreach" and "doParallel".
+#' @description Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. The parallel computation depends on R packages "foreach" and "doParallel".
 #' @param Y continuous or discrete and non-missing, n by 1 numeric outcome vector.
 #' @param D continuous and non-missing, n by 1 numeric treatment vector.
 #' @param Z continuous or discrete, non-missing, n by pz numeric instrument matrix, containing pz instruments.
 #' @param X continuous or discrete, n by px numeric baseline covariates.
 #' @param M an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 3.
 #' @param M.est True or False, whether estimate M based on BIC. Default is True.
+#' @param V the set of valid IVs for implementing the oracle control function method
 #' @param intercept a boolean scalar indicating to include the intercept or not. Default is TRUE.
 #' @param d1 a scalar for computing CATE(d1,d2|w0).
 #' @param d2 a scalar for computing CATE(d1,d2|w0).
 #' @param w0  a (pz+px) by 1 vector for computing CATE(d1,d2|w0).
 #' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
 #' @param bw  a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
-#' @param parallel  True or False indicating whether to use parallel computing (not available on Windows). Default is Flase.
+#' @param parallel  True or False indicating whether to use parallel computing. Default is False.
 
 #' @return
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
+#' @import dr
+#' @import orthoDr
 #' @export
 #'
 
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' ### Working Low Dimensional Example ###
 #' library(mvtnorm)
 #' library(MASS)
 #' library(Matrix)
-#' library(dr)
-#' library(orthoDr)
 #' n = 500; J = 7; s = 5; d1=-1; d2=1; z0=c(rep(0, J-1),0.1)
 #' Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
 #' gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
@@ -53,7 +54,8 @@
 #'
 #'
 #'
-SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, bootstrap = T, M.est=T, V=NULL, intercept=T,
+
+SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=T,
                      d1, d2 , w0, bw=NULL, parallel=F){
   pz<- ncol(Z)
   px<-0
@@ -203,7 +205,7 @@ Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
   # Voting
   diag(VHats.bool) <- rep(TRUE, nCand)
   VM = rowSums(VHats.bool)
-  cat(VM,'\n')
+  # cat(VM,'\n')
   VHat = rownames(VHats.bool)[VM > (0.5 * length(SHat))] # Majority winners
   return(list(VHat = VHat,SHat=SHat))
 }

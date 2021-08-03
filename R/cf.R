@@ -53,7 +53,6 @@ cf <- function(outcome.formula,treatment.formula){
 #'
 #' @param outcome.formula formula specification(s) of the regression relationship between outcome, covariates and the endogeneity variables, such as \code{Y ~ X + D + g_2(D) + ... + g_k(D)}.
 #' @param treatment.formula formula specification(s) of the regression relationship between endogeneity variables, covariates and the instrumental variables, such as \code{D ~ X + Z + h_2(Z) + ... + h_k(Z)}.
-#' @param verbose a boolean scalar indicating to indicate the test result or not, with default FALSE.
 #' @return
 #'    \item{\code{coefficients}}{scalar numeric value: the estimate of the treatment effect}
 #'    \item{\code{vcov}}{numeric matrix: estimated covariance matrix of coefficients}
@@ -80,7 +79,7 @@ cf <- function(outcome.formula,treatment.formula){
 #' pretest(Y~X+D+I(D^2),D~X+Z+I(Z^2))
 #'
 #'
-pretest <- function(outcome.formula,treatment.formula,verbose=FALSE){
+pretest <- function(outcome.formula,treatment.formula){
   outcome.formula <- Formula(outcome.formula)
   treatment.formula <- Formula(treatment.formula)
 
@@ -105,17 +104,13 @@ pretest <- function(outcome.formula,treatment.formula,verbose=FALSE){
   prob.larger.than.diff
   alpha <- 0.05
   if (prob.larger.than.diff>alpha) {
-    if (verbose) {
-      cat("Level",alpha, "Pretest estimator is Control function estimator.","\n")
-    }
 
+    cat("Level",alpha, "Pretest estimator is Control function estimator.","\n")
     pretest.coef <- cf.coef
     pretest.vcov <- cf.vcov
   } else{
-    if (verbose) {
-      cat("Level",alpha, "Pretest estimator is two stage least square estimator.","\n")
-    }
 
+    cat("Level",alpha, "Pretest estimator is two stage least square estimator.","\n")
     pretest.coef <- iv.coef
     pretest.vcov <- iv.vcov
   }

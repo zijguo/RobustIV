@@ -223,7 +223,7 @@ Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
   # Voting
   diag(VHats.bool) <- rep(TRUE, nCand)
   VM = rowSums(VHats.bool)
-  cat(VM,'\n')
+  # cat(VM,'\n')
   VHat = rownames(VHats.bool)[VM > (0.5 * length(SHat))] # Majority winners
 
   return(list(VHat = VHat,SHat=SHat))

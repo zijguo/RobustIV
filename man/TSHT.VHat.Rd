@@ -12,7 +12,8 @@ TSHT.VHat(
   SigmaSqD,
   SigmaYD,
   bootstrap = FALSE,
-  tuning = 2.01
+  tuning = 2.01,
+  max_clique
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ TSHT.VHat(
 \item{bootstrap}{a logical value, default by FALSE(What is this for in TSHT.Initial?).}
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
+
+\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix.}
 }
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
