@@ -8,6 +8,7 @@
 #'    \item{\code{vcov}}{numeric matrix: estimated covariance matrix of coefficients}
 #' @export
 #'
+#'
 #' @import Formula
 #' @importFrom stats as.formula lm pchisq quantile resid vcov
 #'
@@ -47,6 +48,9 @@ cf <- function(outcome.formula,treatment.formula){
 
   return(list(coefficients = cf.coef, vcov = cf.vcov))
 }
+
+
+
 
 #' @title Prestest estimator
 #' @description This function implements the pretest approach  for estimation and inference of nonlinear treatment effects as developed in Guo and Small (2016)
@@ -122,4 +126,45 @@ pretest <- function(outcome.formula,treatment.formula){
     p.value = prob.larger.than.diff
   )
   return(pretest.val)
+}
+
+#' @title Two stage least square estimator
+#' @description This function implements the two stage least square method for estimation and inference of (non)linear treatment effects. This function just works like a \code{ivreg} in AER.
+#'
+#' @param outcome.formula formula specification(s) of the regression relationship between outcome, covariates and the endogeneity variables, such as \code{Y ~ X + D + g_2(D) + ... + g_k(D)}.
+#' @param treatment.formula formula specification(s) of the regression relationship between endogeneity variables, covariates and the instrumental variables, such as \code{D ~ X + Z + h_2(Z) + ... + h_k(Z)}.
+#'
+#' @return
+#'    \item{\code{coefficients}}{scalar numeric value: the estimate of the treatment effect}
+#'    \item{\code{vcov}}{numeric matrix: estimated covariance matrix of coefficients}
+#' @export
+#' @importFrom AER ivreg
+#'
+#' @examples
+#' #' ### Generate the data
+#' library(MASS)
+#' library(RobustIV)
+#' n <- 10000
+#' mu <- rep(0,2); V <- cbind(c(1,0.5),c(0.5,1))
+#' X <- rnorm(n); Z <- rnorm(n)
+#' err <- mvrnorm(n,mu=mu,Sigma = V)
+#' u1 <- err[,1]; v2 <- err[,2]
+#' D <- 1+X/8+Z/3+Z^2/8+v2
+#' Y <- 1+X+10*D +10*D^2+u1
+#'
+#' ### Implement the two stage least square method
+#' tsls(Y~X+D+I(D^2),D~X+Z+I(Z^2))
+#'
+tsls <- function(outcome.formula,treatment.formula){
+  outcome.formula <- Formula(outcome.formula)
+  treatment.formula <- Formula(treatment.formula)
+
+  iv.temp<- attr(treatment.formula,"rhs")
+  iv.formula <- as.formula(paste(format(outcome.formula),"|",iv.temp))
+  tsls.model <- ivreg(iv.formula)
+  iv.coef <- coef(tsls.model)
+  iv.vcov <- vcov(tsls.model)
+
+
+  return(list(coefficients = iv.coef, vcov = iv.vcov))
 }

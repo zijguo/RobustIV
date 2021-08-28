@@ -48,7 +48,7 @@ SpotIV(
 
 \item{bw}{a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
 
-\item{parallel}{True or False indicating whether to use parallel computing. Default is False.}
+\item{parallel}{True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.}
 }
 \value{
 \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
@@ -60,7 +60,7 @@ SpotIV(
 Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. The parallel computation depends on R packages "foreach" and "doParallel".
 }
 \examples{
-\donttest{
+\dontrun{
 ### Working Low Dimensional Example ###
 library(mvtnorm)
 library(MASS)
