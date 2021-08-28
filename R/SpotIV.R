@@ -13,7 +13,7 @@
 #' @param w0  a (pz+px) by 1 vector for computing CATE(d1,d2|w0).
 #' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
 #' @param bw  a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
-#' @param parallel  True or False indicating whether to use parallel computing. Default is False.
+#' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.
 
 #' @return
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
@@ -22,11 +22,13 @@
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 #' @import dr
 #' @import orthoDr
+#' @import foreach
+#' @import doParallel
 #' @export
 #'
 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' ### Working Low Dimensional Example ###
 #' library(mvtnorm)
 #' library(MASS)
@@ -112,6 +114,7 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
   bw.z=asf.dw$bw.z
   ####bootstrap
   if(parallel){
+    registerDoParallel(4)
     boot_b <- foreach(i=1:bs.Niter, .combine='c') %dopar% {
       bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
       list(Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,

@@ -20,7 +20,7 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' ### Working Low Dimensional Example ###
 #' library(RobustIV)
 #' library(MASS)
@@ -275,9 +275,9 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
   # maximal clique
   if (max_clique) {
     voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
-    max_block <- largest_cliques(voting.graph)
-    VHat <- as_ids(sort(max_block[[1]]))
-    VHat <- as.numeric(VHat) # randomly pick the first one if multiple maximal cliques exist
+    max.clique <- largest.cliques(voting.graph)
+    VHat <- unique(as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
+    VHat <- sort(as.numeric(VHat))
   } else {
     # Voting
     #VM.1 = apply(VHats.bool,1,sum)

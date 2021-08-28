@@ -46,7 +46,7 @@ TSHT(
 Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
 }
 \examples{
-\donttest{
+\dontrun{
 ### Working Low Dimensional Example ###
 library(RobustIV)
 library(MASS)
