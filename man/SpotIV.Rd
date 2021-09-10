@@ -11,14 +11,14 @@ SpotIV(
   X = NULL,
   bs.Niter = 40,
   M = 2,
-  M.est = T,
+  M.est = TRUE,
   V = NULL,
-  intercept = T,
+  intercept = TRUE,
   d1,
   d2,
   w0,
   bw = NULL,
-  parallel = F
+  parallel = FALSE
 )
 }
 \arguments{

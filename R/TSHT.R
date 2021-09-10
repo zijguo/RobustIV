@@ -17,6 +17,8 @@
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
 #'     \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
 #'     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+#' @import sandwich
+#' @import intervals
 #' @export
 #'
 #' @examples
@@ -103,12 +105,36 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
                       max_clique = max_clique)
   VHat = SetHats$VHat; SHat = SetHats$SHat
 
+
+  if (max_clique) {
+    max.clique <- SetHats$max.clique
+    CI.temp <- matrix(0,nrow = length(max.clique), ncol = 2)
+    for (i in 1:length(max.clique)) {
+      temp <- max.clique[[i]]
+      AVHat = solve(A[temp,temp])
+      betaHat = (t(inputs$ITT_Y[temp]) %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])
+      SigmaSq = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD
+      betaVarHat = SigmaSq * (t(inputs$ITT_D[temp]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[temp,temp] %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])^2
+      ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
+      CI.temp[i,] <- ci
+    }
+    uni<- Intervals(CI.temp)
+    ###### construct the confidence interval by taking a union
+    CI.union<-as.matrix(interval_union(uni))
+    CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
+    ci <- as.vector(CI.union)
+
+  }
+
+
   # Obtain point est, se, and ci
   AVHat = solve(A[VHat,VHat])
   betaHat = (t(inputs$ITT_Y[VHat]) %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])
   SigmaSq = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD
   betaVarHat = SigmaSq * (t(inputs$ITT_D[VHat]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[VHat,VHat] %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])^2
-  ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
+  if (!max_clique) {
+    ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
+  }
 
   return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci))
 }
@@ -212,6 +238,7 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+#'     \item{\code{V.set}}{a vector denoting the set of the set of valid and relevant IVs as character.}
 #' @export
 #'
 #' @import igraph
@@ -271,7 +298,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
       VHats.boot.sym[i,j]<-min(VHats.bool[i,j],VHats.bool[j,i])
     }
   }
-
+  diag(VHats.boot.sym) <- 1
   # maximal clique
   if (max_clique) {
     voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
@@ -308,7 +335,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
   }
 
   if (max_clique) {
-    returnList <- list(SHat=SHat,VHat=VHat)
+    returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique)
   } else {
     returnList <- list(SHat=SHat,VHat=VHat,V.set=V.set)
   }

@@ -57,8 +57,8 @@
 #'
 #'
 
-SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=T,
-                     d1, d2 , w0, bw=NULL, parallel=F){
+SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, intercept=TRUE,
+                     d1, d2 , w0, bw=NULL, parallel=FALSE){
   pz<- ncol(Z)
   px<-0
   if(!is.null(X)){
@@ -71,12 +71,16 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
   #first-stage regression
   if(intercept){
     gam.re<- lm(D ~ Z)
+    gam.hat<-gam.re$coef[-1]
+    var.gam <- n * as.matrix(vcov(gam.re)[2:(pz+1),2:(pz+1)])
   }else{
     gam.re<- lm(D ~ Z-1)
+    gam.hat<-gam.re$coef
+    var.gam <- n * vcov(gam.re)[1:pz,1:pz]
   }
-  gam.hat<-gam.re$coef[1:ncol(Z)]
+
   v.hat <- D-Z%*%gam.hat
-  var.gam <- n * vcov(gam.re)[1:pz,1:pz]
+
   #voting and applying the majority rule
   if(is.null(V)){
     #get reduced-from
@@ -92,6 +96,7 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
       cat('Majority rule fails.','\n')
       Maj.pass=F
     }
+    VHat <- as.numeric(Select.re$VHat)
     beta.hat<-sapply(1:M, function(m) median(Gam.hat[SHat,m]/gam.hat[SHat]))
     pi.hat<- Gam.hat - gam.hat %*% matrix(beta.hat,nrow=1,ncol=M)
   }else{###oracle method
@@ -101,6 +106,8 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
     pi.hat<-matrix(0,nrow=ncol(Z), ncol=M)
     pi.hat[V,]<-0
     pi.hat[-V,]<-SIR.re$theta.hat[2:(ncol(Z)-length(V)+1),]
+    SHat <- V
+    VHat <- V
   }
   ##estimate cace##
   if(is.null(bw)){
@@ -118,7 +125,7 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
     boot_b <- foreach(i=1:bs.Niter, .combine='c') %dopar% {
       bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
       list(Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,
-                    bw.z=bw.z, V=V, intercept=intercept))
+                    bw.z=bw.z, V=V, intercept=intercept, pz=pz))
     }
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }else{
@@ -126,16 +133,16 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=T, V=NULL, intercept=
     for(i in 1: bs.Niter){
       bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
       boot_b[[i]]<-Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,
-                            bw.z=bw.z, V=V, intercept=intercept)
+                            bw.z=bw.z, V=V, intercept=intercept, pz=pz)
     }
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }
 
-  return(list(Mhat=M, SHat=SHat, Maj.pass=Maj.pass,
-              cateHat=cace.hat, cate.sdHat= cace.sd))
+  return(list(Mhat=M, VHat = VHat, SHat=SHat, Maj.pass=Maj.pass,
+              betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd))
 }
 
-SIR.est<- function(X.cov,Y, M=2, M.est=T){
+SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
   p<- ncol(X.cov)
   n<-length(Y)
   if(M.est){
@@ -161,7 +168,7 @@ SIR.est<- function(X.cov,Y, M=2, M.est=T){
   list(theta.hat=theta.hat, vGam=vGam)
 }
 
-Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
+Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=TRUE) {
   Var.comp.est <- function(Cov.mat, gam.hat, j){
     diag(Cov.mat) + (gam.hat/gam.hat[j])^2 * Cov.mat[j,j] - 2*gam.hat/gam.hat[j] * Cov.mat[j,]
   }
@@ -216,7 +223,7 @@ Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
 
 
 Spot.boot.fun<-function(data, M, d1, d2,w0, SHat,
-                        bw.z=NULL, V=NULL, intercept){
+                        bw.z=NULL, V=NULL, intercept, pz){
   Y<-data[,1]
   D<- data[,2]
   Z<-data[,-c(1,2)]

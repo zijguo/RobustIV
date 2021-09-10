@@ -38,6 +38,7 @@ TSHT.VHat(
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+    \item{\code{V.set}}{a vector denoting the set of the set of valid and relevant IVs as character.}
 }
 \description{
 Implementation of the Two-Stage Hard Thresholding with Voting procedures.This function only takes the necessary inputs of the functions \code{\link{TSHT.OLS}} or \code{\link{TSHT.DeLasso}}. Any other methods to compute the necessary inputs can be adopted by the users according to their preferences.
