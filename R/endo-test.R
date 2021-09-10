@@ -12,6 +12,8 @@
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension.
 #' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)
+#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
+#'
 #'
 #' @return
 #'    \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs}
@@ -49,7 +51,8 @@
 #'
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",invalid=TRUE){
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",invalid=TRUE,
+                      max_clique=FALSE){
   # Check and Clean Input Type #
   # Check Y
 
@@ -109,11 +112,13 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS"
 
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,tuning=tuning)
+                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
+                         SigmaYD=inputs$SigmaYD,tuning=tuning,max_clique = max_clique)
     Set = SetHats$VHat
   } else {
     SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,tuning=tuning)
+                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
+                         SigmaYD=inputs$SigmaYD,tuning=tuning)
     Set = SetHats
   }
   WUMat = inputs$WUMat
