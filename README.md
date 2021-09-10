@@ -4,7 +4,7 @@ This package provides functions for robust inference in the presence of potentia
 
 # Installation
 The package can be installed from Github using the following code:
-```
+```R
 # install.packages("devtools")
 library(devtools)
 devtools::install_github("https://github.com/zijguo/RobustIV")
@@ -17,7 +17,7 @@ First, we consider the linear model.
 ## TSHT
 ### Low-dimensional setting
 When dimension is low, we implement TSHT with OLS reduced-form estimator. 
-```
+```R
 library(RobustIV)
 library(MASS)
 ### generate low dimensional data ###
@@ -38,7 +38,7 @@ TSHT(Y,D,Z,max_clique=TRUE)
 
 ### High-dimensional setting
 When dimension is high, we use Debiased lasso estimator as reduced-form estimator.
-```
+```R
 ### generate high dimensional data ###
 n = 500; L = 600; s = 3; nRelevant = 10
 alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
@@ -59,7 +59,7 @@ TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
 It uses same reduced form estimator as TSHT in each setting.
 
 ### Low-dimensional setting
-```
+```R
 ### Generate low-dimensional data ###
 n <- 1000; pz <- 9; px <- 5;
 p <- pz+px
@@ -80,7 +80,7 @@ endo.test(Y,D,Z,X)
 ```
 
 ### High-dimensional setting
-```
+```R
 ### Define covariance structure of Z and X ###
 ar1_cor <- function(p, rho) {
   A1=matrix(0,p,p)
