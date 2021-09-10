@@ -16,7 +16,7 @@ First, we consider the linear model.
 
 ## TSHT
 ### Low-dimensional setting.
-When dimension $p$ is low, we implement TSHT with OLS reduced-form estimator. 
+When dimension ```math p``` is low, we implement TSHT with OLS reduced-form estimator. 
 ```
 library(RobustIV)
 library(MASS)
