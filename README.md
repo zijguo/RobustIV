@@ -116,3 +116,9 @@ Y <- -1 + D*beta + X%*%phi + epsilon[,2]
 ### usage with debaised lasso ###
 endo.test(Y,D,Z,X,method = "DeLasso")
 ```
+
+## Searching-Sampling method
+We use Searching-Sampling method in low-dimensional setting to resolve post-selection problem.
+```
+
+```
