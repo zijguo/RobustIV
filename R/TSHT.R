@@ -17,8 +17,7 @@
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
 #'     \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
 #'     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-#' @import sandwich
-#' @import intervals
+#' @import Intervals
 #' @export
 #'
 #' @examples
@@ -238,7 +237,7 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#'     \item{\code{V.set}}{a vector denoting the set of the set of valid and relevant IVs as character.}
+#'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
 #' @export
 #'
 #' @import igraph
@@ -337,7 +336,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
   if (max_clique) {
     returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique)
   } else {
-    returnList <- list(SHat=SHat,VHat=VHat,V.set=V.set)
+    returnList <- list(SHat=SHat,VHat=VHat)
   }
   return(returnList)
 }

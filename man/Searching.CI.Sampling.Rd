@@ -13,6 +13,7 @@ Searching.CI.Sampling(
   InitiSet,
   WUMat,
   alpha = 0.05,
+  alpha0 = 0.01,
   beta.grid = NULL,
   rho = NULL,
   M = 1000,

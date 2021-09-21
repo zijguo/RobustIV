@@ -10,10 +10,13 @@
 #' @param Sampling a boolean scalar indicating to implement Sampling method, with default TRUE.
 #' @param boot.value a boolean scalar indicating to implement bootstrap, with default TRUE.
 #' @param M a positive integer indicating the number of bootstrap resampling for computing the confidence interval, with default 1000.
+#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
+#' @param alpha0 a numeric scalar value between 0 and 1 indicating the sampling threshold level for the generated samples, with default 0.01.
 #'
 #' @return
 #' \item{\code{CI}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
 #' \item{\code{rule}}{a boolean scalar denoting whether the identification condition is satisfied or not}
+#' \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #' @import AER
 #' @import MASS
 #' @import sandwich
@@ -75,8 +78,8 @@
 #' Searching.Sampling(Y,D,Z,X)
 #' Searching.Sampling(Y,D,Z,X,Sampling=FALSE)
 #' }
-Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05,
-                               Sampling=TRUE, boot.value=TRUE, M = 1000){
+Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha0 = 0.01,
+                               Sampling=TRUE, boot.value=TRUE, M = 1000, max_clique=FALSE){
   # Check and Clean Input Type #
   # Check Y
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
@@ -128,7 +131,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05,
 
   ### screen out strongly invalid IVs and retain a set of valid and weakly invalid IVs ###
 
-  V0.hat<-TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD)$VHat
+  V0.hat<-TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,max_clique=max_clique)$VHat
   V0.hat<-sort(V0.hat)
 
   ### construct the initial range [L,U] ###
@@ -160,11 +163,11 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05,
   if (Sampling) {
     CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,
                                        V0.hat,WUMat,alpha,beta.grid,M=M,
-                                       bootstrap=boot.value)
-    CI.temp<-c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))
-    return(list(CI = CI.temp,rule = CI.sampling$rule))
+                                       bootstrap=boot.value,alpha0=alpha0)
+    CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
+    return(list(CI = CI.temp,rule = CI.sampling$rule,VHat = V0.hat))
   } else {
-    return(list(CI = CI.temp,rule = CI.sea.refined$rule))
+    return(list(CI = CI.temp,rule = CI.sea.refined$rule,VHat = V0.hat))
   }
 
 
@@ -363,7 +366,7 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
 #' @export
 #'
 Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
-                                WUMat,alpha = 0.05,beta.grid=NULL,rho=NULL,
+                                WUMat,alpha = 0.05,alpha0 = 0.01,beta.grid=NULL,rho=NULL,
                                 M=1000,bootstrap=TRUE){
   pz<-ncol(WUMat)
   if(length(InitiSet)==0){
@@ -396,6 +399,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
     Cov1<-cbind(SigmaSqD*unit.matrix,SigmaYD*unit.matrix)
     Cov2<-cbind(SigmaYD*unit.matrix,SigmaSqY*unit.matrix)
     Cov.total<-rbind(Cov1,Cov2)
+
     for(m in 1:M){
       Gen.mat<-mvrnorm(1, rep(0,2*pz), Cov.total)
       ITT_Y.sample<-ITT_Y-Gen.mat[(pz+1):(2*pz)]
@@ -403,11 +407,13 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
       ###### generating indepedent copies
       #ITT_Y.sample<-ITT_Y-mvrnorm(1,rep(0,pz),Cov.Y)
       #ITT_D.sample<-ITT_D-mvrnorm(1,rep(0,pz),Cov.D)
+
       for(j in 1:n.beta){
         b<-beta.grid[j]
         se.b<-sqrt(SigmaSqY+b^2*SigmaSqD-2*b*SigmaYD)
         valid.grid.sample[m,j]<-sum(abs(ITT_Y.sample[InitiSet]-b*ITT_D.sample[InitiSet])<rho*Tn*se.b*SE.norm[InitiSet])
       }
+
     }
     CI<-matrix(NA,nrow=M,ncol=2)
     for(m in 1:M){
@@ -417,7 +423,10 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
       }
     }
     CI<-na.omit(CI)
+
+    delta <- 0.05
     while((dim(as.matrix(CI))[1]<min(0.05*M,50)) && (rho<0.5)){
+      M0 <- NULL
       #print(as.matrix(CI)[1])
       #print(rho)
       rho<-1.25*rho
@@ -425,6 +434,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
         Gen.mat<-mvrnorm(1, rep(0,2*pz), Cov.total)
         ITT_Y.sample<-ITT_Y-Gen.mat[(pz+1):(2*pz)]
         ITT_D.sample<-ITT_D-Gen.mat[1:pz]
+
         #ITT_Y.sample<-ITT_Y-mvrnorm(1,rep(0,pz),Cov.Y)
         #ITT_D.sample<-ITT_D-mvrnorm(1,rep(0,pz),Cov.D)
         for(j in 1:n.beta){
@@ -432,10 +442,17 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
           se.b<-sqrt(SigmaSqY+b^2*SigmaSqD-2*b*SigmaYD)
           valid.grid.sample[m,j]<-sum(abs(ITT_Y.sample[InitiSet]-b*ITT_D.sample[InitiSet])<rho*Tn*se.b*SE.norm[InitiSet])
         }
+
+        if (t(Gen.mat)%*%solve(Cov.total,Gen.mat)<=(1+delta)*qchisq(p = 1-alpha0,df = 2*pz)) {
+          M0 <- c(M0,m)
+        }
+
       }
+
       CI<-matrix(NA,nrow=M,ncol=2)
-      for(m in 1:M){
+      for(m in M0){
         if(length(which(valid.grid.sample[m,]>threshold.size))>0){
+
           CI[m,1]<-min(beta.grid[which(valid.grid.sample[m,]>threshold.size)])
           CI[m,2]<-max(beta.grid[which(valid.grid.sample[m,]>threshold.size)])
         }
@@ -493,15 +510,17 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
 #' @param bootstrap a boolean scalar indicating to implement bootstrap, with default TRUE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater than 2 (default = 2.01)
+#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
 #'
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#'     \item{\code{V.set}}{a vector denoting the set of the set of valid and relevant IVs as character.}
+#'
 #' @export
+#' @import igraph
 #'
 TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,alpha = 0.05,
-                         bootstrap=FALSE,tuning = 2.01) {
+                         bootstrap=FALSE,tuning = 2.01,max_clique) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -557,24 +576,42 @@ TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,alpha = 0.0
     }
   }
   diag(VHats.boot.sym) <- 1
-  # Voting
-  #VM.1 = apply(VHats.bool,1,sum)
-  #VM.2 = apply(VHats.bool,2,sum)
-  #VM<-VM.1
-  #for(l in 1:length(VM.1)){
-  # VM[l]=min(VM.1[l],VM.2[l])
-  #}
-  VM= apply(VHats.boot.sym,1,sum)
-  VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
-  VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
-  V.set<-NULL
-  for(index in union(VM.m,VM.p)){
-    V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
+
+  # maximal clique
+  if (max_clique) {
+    voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
+    max.clique <- largest.cliques(voting.graph)
+    VHat <- unique(as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
+    VHat <- sort(as.numeric(VHat))
+  } else {
+    # Voting
+    #VM.1 = apply(VHats.bool,1,sum)
+    #VM.2 = apply(VHats.bool,2,sum)
+    #VM<-VM.1
+    #for(l in 1:length(VM.1)){
+    # VM[l]=min(VM.1[l],VM.2[l])
+    #}
+    VM= apply(VHats.boot.sym,1,sum)
+    VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
+    VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
+    V.set<-NULL
+    for(index in union(VM.m,VM.p)){
+      V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
+    }
+    VHat<-NULL
+    for(index in V.set){
+      VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
+    }
+    VHat=sort(as.numeric(VHat))
   }
-  VHat<-NULL
-  for(index in V.set){
-    VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
+
+  # Error check
+  if(length(VHat) == 0){
+    warning("VHat Warning: No valid IVs estimated. This may be due to weak IVs or identification condition not being met. Use more robust methods.")
+    warning("Defaulting to all IVs being valid")
+    VHat = 1:pz
   }
-  VHat=as.numeric(VHat)
-  return(list(SHat=SHat,VHat=VHat,V.set=V.set))
+  returnList <- list(SHat=SHat,VHat=VHat)
+
+  return(returnList)
 }

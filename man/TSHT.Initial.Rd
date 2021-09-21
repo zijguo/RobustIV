@@ -13,7 +13,8 @@ TSHT.Initial(
   SigmaYD,
   alpha = 0.05,
   bootstrap = FALSE,
-  tuning = 2.01
+  tuning = 2.01,
+  max_clique
 )
 }
 \arguments{
@@ -35,11 +36,12 @@ TSHT.Initial(
 \item{bootstrap}{a boolean scalar indicating to implement bootstrap, with default TRUE.}
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater than 2 (default = 2.01)}
+
+\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{V.set}}{a vector denoting the set of the set of valid and relevant IVs as character.}
 }
 \description{
 This modifies the original TSHT function and produces an initial esitmator for sampling and searching

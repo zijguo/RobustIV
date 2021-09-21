@@ -13,7 +13,8 @@ endo.test(
   alpha = 0.05,
   tuning = 2.01,
   method = "OLS",
-  invalid = TRUE
+  invalid = TRUE,
+  max_clique = FALSE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ endo.test(
 \item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension.}
 
 \item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)}
+
+\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
 \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs}

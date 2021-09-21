@@ -11,9 +11,11 @@ Searching.Sampling(
   X,
   intercept = TRUE,
   alpha = 0.05,
+  alpha0 = 0.01,
   Sampling = TRUE,
   boot.value = TRUE,
-  M = 1000
+  M = 1000,
+  max_clique = FALSE
 )
 }
 \arguments{
@@ -29,15 +31,20 @@ Searching.Sampling(
 
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
+\item{alpha0}{a numeric scalar value between 0 and 1 indicating the sampling threshold level for the generated samples, with default 0.01.}
+
 \item{Sampling}{a boolean scalar indicating to implement Sampling method, with default TRUE.}
 
 \item{boot.value}{a boolean scalar indicating to implement bootstrap, with default TRUE.}
 
 \item{M}{a positive integer indicating the number of bootstrap resampling for computing the confidence interval, with default 1000.}
+
+\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
 \item{\code{CI}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
 \item{\code{rule}}{a boolean scalar denoting whether the identification condition is satisfied or not}
+\item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 }
 \description{
 Construction of confidence intervals with Searching-Sampling method
