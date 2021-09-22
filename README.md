@@ -170,7 +170,7 @@ Searching.Sampling(Y,D,Z,X,max_clique=TRUE,alpha0 = 0.01)
 ```
 
 ## Control function method
-We use the control function method in additive model.
+We use the control function method in additive model with continuous outcome.
 ```R
 ### control function method ###
 
@@ -190,8 +190,32 @@ cf(Y~X+D+I(D^2),D~X+Z+I(Z^2))
 pretest(Y~X+D+I(D^2),D~X+Z+I(Z^2))
 ```
 
+## Control function method for probit model
+```R
+### Generate a setting ###
+n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
+Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
+gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
+cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
+noise.vec<-mvrnorm(n, rep(0,2), cov.noise)
+v.vec<-noise.vec[,1]
+X<-matrix(runif(n*2), ncol=2)
+D = 0.5+Z %*% gam + v.vec
+pi0 <- c(rep(0, s), 0.8, 0.4)
+beta0 <- 0.25
+u.vec<- noise.vec[,2]
+Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
+
+### Implement SpotIV method when we assume probit model with valid IV assumption ###
+ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='valid', intercept=TRUE)
+
+### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
+ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='majority', intercept=TRUE)
+
+```
+
 ## SpotIV method
-We use the SpotIV method in semiparametric model.
+We use the SpotIV method in semiparametric model with possibly invalid IV assumption.
 ```R
 ### Generate a setting ###
 n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
@@ -216,10 +240,6 @@ SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), paral
 ### Implement SpotIV method without parallel computing option ###
 SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), parallel=TRUE)
 
-### Implement SpotIV method when we assume probit model with valid IV assumption ###
-ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='valid', intercept=TRUE)
 
-### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
-ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='majority', intercept=TRUE)
 ```
 
