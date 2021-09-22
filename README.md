@@ -214,7 +214,7 @@ ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0)
 
 ```
 
-## SpotIV method
+## SpotIV
 We use the SpotIV method in semiparametric model with possibly invalid IV assumption.
 ```R
 ### Generate a setting ###
