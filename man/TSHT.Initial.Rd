@@ -11,10 +11,11 @@ TSHT.Initial(
   SigmaSqY,
   SigmaSqD,
   SigmaYD,
+  covW,
   alpha = 0.05,
   bootstrap = FALSE,
   tuning = 2.01,
-  max_clique
+  max_clique = FALSE
 )
 }
 \arguments{

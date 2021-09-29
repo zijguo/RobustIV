@@ -14,9 +14,13 @@
 #' @param alpha0 a numeric scalar value between 0 and 1 indicating the sampling threshold level for the generated samples, with default 0.01.
 #'
 #' @return
-#' \item{\code{CI}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+#' \item{\code{CI}}{a two dimensional numeric vector denoting the unioned 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+#' \item{\code{CI.matrix}}{a numeric matrix denoting CI for appropriate candidates of beta. Only returns when \code{Sampling} is \code{FALSE}.}
 #' \item{\code{rule}}{a boolean scalar denoting whether the identification condition is satisfied or not}
 #' \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
+#' \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+#' \item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{max_clique} is \code{TRUE}.}
+#' \item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #' @import AER
 #' @import MASS
 #' @import sandwich
@@ -129,10 +133,56 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   SigmaSqD = inputs$SigmaSqD #sum(qr.resid(qrW,D)^2)/(n -p-1)
   SigmaYD = inputs$SigmaYD #sum(qr.resid(qrW,Y) * qr.resid(qrW,D)) / (n - p-1)
 
-  ### screen out strongly invalid IVs and retain a set of valid and weakly invalid IVs ###
 
-  V0.hat<-TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,max_clique=max_clique)$VHat
-  V0.hat<-sort(V0.hat)
+
+  ### screen out strongly invalid IVs and retain a set of valid and weakly invalid IVs ###
+  TSHT.Init <- TSHT.Initial(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,max_clique=max_clique,bootstrap = TRUE)
+
+  if (max_clique) {
+
+    ### if max_clique=TRUE, implement the method through all individual maximum cliques ###
+
+    max.clique <- TSHT.Init$max.clique
+    max.clique.mat <- matrix(0,nrow = length(max.clique),ncol = length(max.clique[[1]]))
+    CI.clique <- matrix(0,nrow = length(max.clique), ncol = 2)
+    rule.clique <- matrix(FALSE,nrow = length(max.clique),ncol = 1)
+    for (i in 1:length(max.clique)) {
+      V0.hat <- sort(max.clique[[i]])
+      temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-
+        2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
+      var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
+      CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
+      CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
+      CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
+      uni<- Intervals(CI.initial)
+      CI.initial.union<-as.matrix(interval_union(uni))
+      beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
+      CI.sea<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,alpha,
+                           beta.grid=beta.grid.seq,bootstrap=FALSE)
+      CI.temp<-CI.sea$CI.search
+      beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+
+      ### conduct the refined searching ###
+
+      CI.sea.refined<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,
+                                   WUMat,alpha,beta.grid,bootstrap=boot.value)
+      CI.search<-CI.sea.refined$CI.search
+      CI.clique[i,] <- t(as.matrix(c(min(CI.search),max(CI.search)))) # min and max of CIs
+      max.clique.mat[i,] <- V0.hat
+      rule.clique[i,] <- CI.sea.refined$rule
+      if (Sampling) {
+        CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,
+                                           V0.hat,WUMat,alpha,beta.grid,M=M,
+                                           bootstrap=boot.value,alpha0=alpha0)
+        CI.clique[i,]<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2])))) # min and max of CIs
+        rule.clique[i,] <- CI.sampling$rule
+      }
+    }
+  }
+
+
+
+  V0.hat<-TSHT.Init$VHat
 
   ### construct the initial range [L,U] ###
 
@@ -157,20 +207,34 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
 
   CI.sea.refined<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,
                                WUMat,alpha,beta.grid,bootstrap=boot.value)
-  CI.temp<-CI.sea.refined$CI.search
-
+  CI.search<-CI.sea.refined$CI.search
+  CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
   ### conduct the refined sampling ###
   if (Sampling) {
     CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,
                                        V0.hat,WUMat,alpha,beta.grid,M=M,
                                        bootstrap=boot.value,alpha0=alpha0)
     CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
-    return(list(CI = CI.temp,rule = CI.sampling$rule,VHat = V0.hat))
+    if (max_clique) {
+      return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat = V0.hat,
+                  CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
+    } else{
+
+      return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat = V0.hat))
+    }
+
   } else {
-    return(list(CI = CI.temp,rule = CI.sea.refined$rule,VHat = V0.hat))
+    if (max_clique) {
+      return(list(CI.union = CI.temp,CI.matrix = CI.search,
+                  rule = CI.sea.refined$rule,VHat = V0.hat,
+                  CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
+    } else{
+      return(list(CI.union = CI.temp,CI.matrix = CI.search,
+                  rule = CI.sea.refined$rule,VHat = V0.hat))
+
+    }
+
   }
-
-
 
 }
 
@@ -325,7 +389,7 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
       uni<- Intervals(CI)
       ###### construct the confidence interval by taking a union
       CI.search<-as.matrix(interval_union(uni))
-      CI.search <- t(as.matrix(c(min(CI.search),max(CI.search)))) #added
+      # CI.search <- t(as.matrix(c(min(CI.search),max(CI.search)))) #added
     }
     return(list(CI.search=CI.search,rule=rule,valid.grid=valid.grid))
   }
@@ -470,7 +534,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
       uni<- Intervals(CI)
       ###### construct the confidence interval by taking a union
       CI.union<-as.matrix(interval_union(uni))
-      CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
+      # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
 
     }
     #CI.upper<-quantile(CI[,2],0.975)
@@ -519,8 +583,8 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #' @export
 #' @import igraph
 #'
-TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,alpha = 0.05,
-                         bootstrap=FALSE,tuning = 2.01,max_clique) {
+TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW, alpha = 0.05,
+                         bootstrap=FALSE,tuning = 2.01,max_clique=FALSE) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -611,7 +675,10 @@ TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,alpha = 0.0
     warning("Defaulting to all IVs being valid")
     VHat = 1:pz
   }
-  returnList <- list(SHat=SHat,VHat=VHat)
-
+  if (max_clique) {
+    returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique)
+  } else {
+    returnList <- list(SHat=SHat,VHat=VHat)
+  }
   return(returnList)
 }

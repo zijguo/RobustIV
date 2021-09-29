@@ -28,23 +28,22 @@
 #' ### Working Low Dimensional Example ###
 #' library(mvtnorm)
 #' library(MASS)
-#' n = 500; J = 7; s = 5; d1=-1; d2=1; z0=c(rep(0, J-1),0.1)
+#' n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
 #' Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
 #' gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
 #' cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
 #' noise.vec<-rmvnorm(n, rep(0,2), cov.noise)
 #' v.vec<-noise.vec[,1]
 #' X<-matrix(runif(n*2), ncol=2)
-#' D = 0.5+Z %*% gam + X%*% rep(0.2,2) + v.vec
-#'
-#' pi0 <- c(rep(0, s), 0.4, 0.2)
+#' D = 0.5+Z %*% gam + v.vec
+#' pi0 <- c(rep(0, s), 0.8, 0.4)
 #' beta0 <- 0.25
 #' u.vec<- noise.vec[,2]
 #' Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
 #' u1.r<-rnorm(2000,0,sd=1)
 #' cace0 <- mean((as.numeric(-0.5+d1 * beta0 + z0 %*% pi0)+ u1.r )>=0) - mean((as.numeric(-0.5+d2 * beta0 + z0 %*% pi0) + u1.r)>=0)
-#' ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='valid', intercept=F)
-#' ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='majority', intercept=F)
+#' ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='valid', intercept=T)
+#' ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='majority', intercept=T)
 #'}
 #'
 #'

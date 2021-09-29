@@ -17,6 +17,10 @@
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
 #'     \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
 #'     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+#'     \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of }
+#'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+#'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+#'     \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #' @import Intervals
 #' @export
 #'
@@ -107,21 +111,27 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
 
   if (max_clique) {
     max.clique <- SetHats$max.clique
+    max.clique.mat <- matrix(0,nrow = length(max.clique),ncol = length(max.clique[[1]]))
     CI.temp <- matrix(0,nrow = length(max.clique), ncol = 2)
+    beta.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
+    betavar.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
     for (i in 1:length(max.clique)) {
-      temp <- max.clique[[i]]
+      temp <- sort(max.clique[[i]])
+      max.clique.mat[i,] <- temp
       AVHat = solve(A[temp,temp])
       betaHat = (t(inputs$ITT_Y[temp]) %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])
       SigmaSq = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD
       betaVarHat = SigmaSq * (t(inputs$ITT_D[temp]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[temp,temp] %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])^2
       ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
       CI.temp[i,] <- ci
+      beta.temp[i,] <- betaHat
+      betavar.temp[i,] <- betaVarHat
     }
     uni<- Intervals(CI.temp)
     ###### construct the confidence interval by taking a union
     CI.union<-as.matrix(interval_union(uni))
-    CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
-    ci <- as.vector(CI.union)
+    # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
+    # ci <- as.vector(CI.union)
 
   }
 
@@ -133,9 +143,14 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
   betaVarHat = SigmaSq * (t(inputs$ITT_D[VHat]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[VHat,VHat] %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])^2
   if (!max_clique) {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
+    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci))
+  } else {
+
+    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=CI.union,
+                max.clique = max.clique.mat, CI.clique = CI.temp, beta.clique = beta.temp,
+                betavar.clique = betavar.temp))
   }
 
-  return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci))
 }
 
 

@@ -33,7 +33,7 @@
 #' library(mvtnorm)
 #' library(MASS)
 #' library(Matrix)
-#' n = 500; J = 7; s = 5; d1=-1; d2=1; z0=c(rep(0, J-1),0.1)
+#' n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
 #' Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
 #' gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
 #' cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
@@ -46,12 +46,13 @@
 #' u.vec<- noise.vec[,2]
 #' Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
 #' u1.r<-rnorm(2000,0,sd=1)
-#' cace0 <- mean((as.numeric(-0.5+d1 * beta0 + z0 %*% pi0)+ u1.r )>=0) - mean((as.numeric(-0.5+d2 * beta0 + z0 %*% pi0) + u1.r)>=0)
+#' cace0 <- mean((as.numeric(-0.5+d1 * beta0 + z0 %*% pi0)+ u1.r )>=0) -
+#' mean((as.numeric(-0.5+d2 * beta0 + z0 %*% pi0) + u1.r)>=0)
 #' library(foreach)
 #' library(doParallel)
 #' registerDoParallel(4)
-#' system.time(re1<-SpotIV(Y=Y, D=D, Z=Z, X=NULL, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=T))
-#' system.time(re2<-SpotIV(Y=Y, D=D, Z=Z, X=NULL, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=F))
+#' system.time(re1<-SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=T))
+#' system.time(re2<-SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=F))
 #'}
 #'
 #'

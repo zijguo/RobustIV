@@ -42,9 +42,13 @@ Searching.Sampling(
 \item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
-\item{\code{CI}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+\item{\code{CI}}{a two dimensional numeric vector denoting the unioned 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+\item{\code{CI.matrix}}{a numeric matrix denoting CI for appropriate candidates of beta. Only returns when \code{Sampling} is \code{FALSE}.}
 \item{\code{rule}}{a boolean scalar denoting whether the identification condition is satisfied or not}
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
+\item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+\item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{max_clique} is \code{TRUE}.}
+\item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 }
 \description{
 Construction of confidence intervals with Searching-Sampling method

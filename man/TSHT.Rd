@@ -41,6 +41,10 @@ TSHT(
     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
     \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+    \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of }
+    \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+    \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+    \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 }
 \description{
 Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
