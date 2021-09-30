@@ -173,7 +173,7 @@ D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
 Y <- -1 + D*beta + X%*%phi + epsilon[,2]
 
 ### basic usage ###
-endo.test(Y,D,Z,X)
+endo.test(Y,D,Z,X,method ="OLS")
 ```
 
 ### Reference
