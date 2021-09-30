@@ -58,68 +58,6 @@ TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
 ### Reference
 Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting](https://doi.org/10.1111/rssb.12275), J. R. Stat. Soc. B, 80: 793-815. 
 
-## Endogeneity test
-It uses same reduced form estimator as TSHT in each setting.
-
-### Low-dimensional setting
-```R
-### Generate low-dimensional data ###
-n <- 1000; pz <- 9; px <- 5;
-p <- pz+px
-s = 10; nRelevant = 7
-beta <- 1
-phi <- seq(0.6,1.0,length.out=px)
-psi <- seq(1.1,1.5,length.out=px)
-gamma = c(rep(1,nRelevant),rep(0,pz-nRelevant))
-epsilonSigma = matrix(c(1.5,0.5,0.5,1.5),2,2)
-W <- matrix(rnorm(n*p),n,p)
-Z <- W[,1:pz]; X <- W[,(pz+1):p]
-epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
-Y <- -1 + D*beta + X%*%phi + epsilon[,2]
-
-### basic usage ###
-endo.test(Y,D,Z,X)
-```
-
-### High-dimensional setting
-```R
-### Define covariance structure of Z and X ###
-ar1_cor <- function(p, rho) {
-  A1=matrix(0,p,p)
-  for(i in 1:p){
-    for(j in 1:p){
-      A1[i,j]<-rho^(abs(i-j))
-    }
-  }
-  A1
-}
-Lambda <- ar1_cor(p,0.5)
-
-### generate high-dimensional data ### 
-n = 200
-rho1 = 0.3
-Const = 0.5
-s = 10; nRelevant = 7
-pz <- 100; px <- 150; p <- pz+px
-S <- seq(1,nRelevant)
-I <- seq(1,pz) # candidates of instrument variables
-beta <- 1
-phi <- c(seq(0.6,1.5,length.out=s),rep(0,px-s))
-psi <- c(seq(1.1,2.0,length.out=s),rep(0,px-s))
-sig1 <- 1.5; sig2 <- 1.5 
-epsilonSigma = matrix(c(sig1,0.5,0.5,sig2),2,2) 
-gamma = Const*c(rep(1,nRelevant-1),rho1,rep(0,pz-nRelevant))
-W <- mvrnorm(n,mu=rep(0,p),Sigma = Lambda)
-Z <- W[,1:pz]; X <- W[,(pz+1):p]
-epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
-Y <- -1 + D*beta + X%*%phi + epsilon[,2]
-
-### usage with debaised lasso ###
-endo.test(Y,D,Z,X,method = "DeLasso")
-```
-
 ## Searching-Sampling method
 We use Searching-Sampling method in low-dimensional setting to resolve post-selection problem.
 ```R
@@ -171,6 +109,71 @@ Searching.Sampling(Y,D,Z,X,Sampling=FALSE,max_clique=TRUE)
 ### Using Sampling method with maximum clique and specifying sampling threshold ### 
 Searching.Sampling(Y,D,Z,X,max_clique=TRUE,alpha0 = 0.01)
 ```
+
+## Endogeneity test in high dimension
+It uses same reduced form estimator as TSHT in each setting.
+
+### High-dimensional setting
+```R
+### Define covariance structure of Z and X ###
+ar1_cor <- function(p, rho) {
+  A1=matrix(0,p,p)
+  for(i in 1:p){
+    for(j in 1:p){
+      A1[i,j]<-rho^(abs(i-j))
+    }
+  }
+  A1
+}
+Lambda <- ar1_cor(p,0.5)
+
+### generate high-dimensional data ### 
+n = 200
+rho1 = 0.3
+Const = 0.5
+s = 10; nRelevant = 7
+pz <- 100; px <- 150; p <- pz+px
+S <- seq(1,nRelevant)
+I <- seq(1,pz) # candidates of instrument variables
+beta <- 1
+phi <- c(seq(0.6,1.5,length.out=s),rep(0,px-s))
+psi <- c(seq(1.1,2.0,length.out=s),rep(0,px-s))
+sig1 <- 1.5; sig2 <- 1.5 
+epsilonSigma = matrix(c(sig1,0.5,0.5,sig2),2,2) 
+gamma = Const*c(rep(1,nRelevant-1),rho1,rep(0,pz-nRelevant))
+W <- mvrnorm(n,mu=rep(0,p),Sigma = Lambda)
+Z <- W[,1:pz]; X <- W[,(pz+1):p]
+epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
+D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
+Y <- -1 + D*beta + X%*%phi + epsilon[,2]
+
+### usage with debaised lasso ###
+endo.test(Y,D,Z,X,method = "DeLasso")
+```
+
+### Low-dimensional setting
+If you need, you can also implement the method in low dimensional setting.
+```R
+### Generate low-dimensional data ###
+n <- 1000; pz <- 9; px <- 5;
+p <- pz+px
+s = 10; nRelevant = 7
+beta <- 1
+phi <- seq(0.6,1.0,length.out=px)
+psi <- seq(1.1,1.5,length.out=px)
+gamma = c(rep(1,nRelevant),rep(0,pz-nRelevant))
+epsilonSigma = matrix(c(1.5,0.5,0.5,1.5),2,2)
+W <- matrix(rnorm(n*p),n,p)
+Z <- W[,1:pz]; X <- W[,(pz+1):p]
+epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
+D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
+Y <- -1 + D*beta + X%*%phi + epsilon[,2]
+
+### basic usage ###
+endo.test(Y,D,Z,X)
+```
+
+
 
 ## Control function method
 We use the control function method in additive model with continuous outcome.
