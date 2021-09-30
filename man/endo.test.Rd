@@ -12,7 +12,7 @@ endo.test(
   intercept = TRUE,
   alpha = 0.05,
   tuning = 2.01,
-  method = "OLS",
+  method = "DeLasso",
   invalid = TRUE,
   max_clique = FALSE
 )
@@ -32,7 +32,7 @@ endo.test(
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
-\item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension.}
+\item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")}
 
 \item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)}
 

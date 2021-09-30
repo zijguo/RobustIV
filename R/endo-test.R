@@ -10,7 +10,7 @@
 #' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
-#' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension.
+#' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")
 #' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)
 #' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
 #'
@@ -51,7 +51,7 @@
 #'
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",invalid=TRUE,
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLasso",invalid=TRUE,
                       max_clique=FALSE){
   # Check and Clean Input Type #
   # Check Y
