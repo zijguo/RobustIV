@@ -110,6 +110,9 @@ Searching.Sampling(Y,D,Z,X,Sampling=FALSE,max_clique=TRUE)
 Searching.Sampling(Y,D,Z,X,max_clique=TRUE,alpha0 = 0.01)
 ```
 
+### Reference
+Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments:   Post-selection  Problems  and  ASolution  Using  Searching  and  Sampling](https://arxiv.org/abs/2104.06911) ,arXiv  e-prints,  art.  arXiv:2104.06911.
+
 ## Endogeneity test in high dimension
 It uses same reduced form estimator as TSHT in each setting.
 
