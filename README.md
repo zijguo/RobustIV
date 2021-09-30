@@ -55,6 +55,9 @@ TSHT(Y,D,Z,method="DeLasso")
 TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
 ```
 
+### Reference
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting](https://doi.org/10.1111/rssb.12275), J. R. Stat. Soc. B, 80: 793-815. 
+
 ## Endogeneity test
 It uses same reduced form estimator as TSHT in each setting.
 
