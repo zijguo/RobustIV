@@ -111,7 +111,7 @@ Searching.Sampling(Y,D,Z,X,max_clique=TRUE,alpha0 = 0.01)
 ```
 
 ### Reference
-Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments:   Post-selection  Problems  and  ASolution  Using  Searching  and  Sampling](https://arxiv.org/abs/2104.06911) ,arXiv  e-prints,  art.  arXiv:2104.06911.
+Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
 
 ## Endogeneity test in high dimension
 It uses same reduced form estimator as TSHT in each setting.
@@ -176,10 +176,11 @@ Y <- -1 + D*beta + X%*%phi + epsilon[,2]
 endo.test(Y,D,Z,X)
 ```
 
-
+### Reference
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Testing endogeneity with high dimensional covariates](https://www.sciencedirect.com/science/article/pii/S0304407618301325), Journal of Econometrics, Elsevier, vol. 207(1), pages 175-187.
 
 ## Control function method
-We use the control function method in additive model with continuous outcome.
+We use the control function method in additive model with continuous outcome and valid IVs.
 ```R
 ### control function method ###
 
@@ -199,29 +200,9 @@ cf(Y~X+D+I(D^2),D~X+Z+I(Z^2))
 pretest(Y~X+D+I(D^2),D~X+Z+I(Z^2))
 ```
 
-## Control function method for probit model
-```R
-### Generate a setting ###
-n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
-Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
-gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
-cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
-noise.vec<-mvrnorm(n, rep(0,2), cov.noise)
-v.vec<-noise.vec[,1]
-X<-matrix(runif(n*2), ncol=2)
-D = 0.5+Z %*% gam + v.vec
-pi0 <- c(rep(0, s), 0.8, 0.4)
-beta0 <- 0.25
-u.vec<- noise.vec[,2]
-Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
-
-### Implement SpotIV method when we assume probit model with valid IV assumption ###
-ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='valid', intercept=TRUE)
-
-### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
-ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='majority', intercept=TRUE)
-
-```
+### References
+Guo, Z. and D. S. Small (2016), [Control function instrumental variable estimation of nonlinear
+causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), The Journal of Machine Learning Research 17(1), 3448–3482.
 
 ## SpotIV
 We use the SpotIV method in semiparametric model with possibly invalid IV assumption.
@@ -251,4 +232,30 @@ SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), paral
 
 
 ```
+## Control function method for probit model
+Especially, we can use the method for probit model assumption.
+```R
+### Generate a setting ###
+n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
+Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
+gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
+cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
+noise.vec<-mvrnorm(n, rep(0,2), cov.noise)
+v.vec<-noise.vec[,1]
+X<-matrix(runif(n*2), ncol=2)
+D = 0.5+Z %*% gam + v.vec
+pi0 <- c(rep(0, s), 0.8, 0.4)
+beta0 <- 0.25
+u.vec<- noise.vec[,2]
+Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
 
+### Implement SpotIV method when we assume probit model with valid IV assumption ###
+ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='valid', intercept=TRUE)
+
+### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
+ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='majority', intercept=TRUE)
+
+```
+
+### Reference
+Li, S., Guo, Z. (2020), [Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables](https://arxiv.org/abs/2010.09922), Preprint arXiv:2010.09922.
