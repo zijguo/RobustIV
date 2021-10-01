@@ -49,30 +49,23 @@ Endogneity test function, which provides the robust inference of the treatment e
 \examples{
 
 
-### Working Low Dimensional Example ###
 
 library(MASS)
 library(RobustIV)
 
 ## Generate the data
-n <- 1000; pz <- 9; px <- 5;
-p <- pz+px
-s = 10; nRelevant = 7
-beta <- 1
-phi <- seq(0.6,1.0,length.out=px)
-psi <- seq(1.1,1.5,length.out=px)
-gamma = c(rep(1,nRelevant),rep(0,pz-nRelevant))
-epsilonSigma = matrix(c(1.5,0.5,0.5,1.5),2,2)
-W <- matrix(rnorm(n*p),n,p)
-Z <- W[,1:pz]; X <- W[,(pz+1):p]
+n = 300; L = 400; s = 3; nRelevant = 10
+alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
+epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
+Z = matrix(rnorm(n*L),n,L)
 epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D <- 1 + Z\%*\%gamma + X\%*\%psi + epsilon[,1]
-Y <- -1 + D*beta + X\%*\%phi + epsilon[,2]
+D =  0.5 + Z \%*\% gamma + epsilon[,1]
+Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
 
 ## Implement the endogeneity test
 
-endo.test(Y,D,Z,X)
-
+endo.test(Y,D,Z)
+endo.test(Y,D,Z,max_clique = TRUE)
 
 
 
