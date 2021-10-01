@@ -21,7 +21,7 @@
 #'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#' @import Intervals
+#' @import intervals
 #' @export
 #'
 #' @examples
