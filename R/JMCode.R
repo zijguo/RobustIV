@@ -1,7 +1,3 @@
-library(Matrix);
-library(glmnet);
-library(flare);
-
 SoftThreshold <- function( x, lambda ) {
   #
   # Standard soft thresholding
@@ -21,13 +17,13 @@ InverseLinftyOneRow <- function ( sigma, i, mu, maxiter=50, threshold=1e-2 ) {
   rho <- max(abs(sigma[i,-i])) / sigma[i,i];
   mu0 <- rho/(1+rho);
   beta <- rep(0,p);
-  
+
   if (mu >= mu0){
     beta[i] <- (1-mu0)/sigma[i,i];
     returnlist <- list("optsol" = beta, "iter" = 0);
     return(returnlist);
   }
-  
+
   diff.norm2 <- 1;
   last.norm2 <- 1;
   iter <- 1;
@@ -37,20 +33,20 @@ InverseLinftyOneRow <- function ( sigma, i, mu, maxiter=50, threshold=1e-2 ) {
   sigma.tilde <- sigma;
   diag(sigma.tilde) <- 0;
   vs <- -sigma.tilde%*%beta;
-  
-  while ((iter <= maxiter) && (diff.norm2 >= threshold*last.norm2)){    
-    
+
+  while ((iter <= maxiter) && (diff.norm2 >= threshold*last.norm2)){
+
     for (j in 1:p){
       oldval <- beta[j];
       v <- vs[j];
       if (j==i)
-        v <- v+1;    
+        v <- v+1;
       beta[j] <- SoftThreshold(v,mu)/sigma[j,j];
       if (oldval != beta[j]){
         vs <- vs + (oldval-beta[j])*sigma.tilde[,j];
       }
     }
-    
+
     iter <- iter + 1;
     if (iter==2*iter.old){
       d <- beta - beta.old;
@@ -62,7 +58,7 @@ InverseLinftyOneRow <- function ( sigma, i, mu, maxiter=50, threshold=1e-2 ) {
         vs <- -sigma.tilde%*%beta;
     }
   }
-  
+
   returnlist <- list("optsol" = beta, "iter" = iter)
   return(returnlist)
 }
@@ -72,7 +68,7 @@ InverseLinfty <- function(sigma, n, resol=1.5, mu=NULL, maxiter=50, threshold=1e
   if (is.null(mu)){
     isgiven <- 0;
   }
-  
+
   p <- nrow(sigma);
   M <- matrix(0, p, p);
   xperc = 0;
@@ -121,7 +117,7 @@ InverseLinfty <- function(sigma, n, resol=1.5, mu=NULL, maxiter=50, threshold=1e
             mu <- mu*resol;
             beta <- last.beta;
             mu.stop <- 1;
-          }                        
+          }
         }
       }
       try.no <- try.no+1
@@ -139,7 +135,7 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
   #
   p <- ncol(X);
   n <- nrow(X);
-  
+
   if  (is.null(lambda)){
     lambda <- sqrt(qnorm(1-(0.1/p))/n);
     outLas <- slim(X,y,lambda=c(lambda),method="lq",q=2,verbose=FALSE);
@@ -160,7 +156,7 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
   }
 }
 
-SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE, 
+SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE,
                      resol=1.3, maxiter=50, threshold=1e-2, verbose = TRUE) {
   #
   # Compute confidence intervals and p-values.
@@ -187,10 +183,10 @@ SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE,
   pp <- p;
   col.norm <- 1/sqrt((1/n)*diag(t(X)%*%X));
   X <- X %*% diag(col.norm);
-  
+
   # Solve Lasso problem using FLARE package
   htheta <- Lasso (X,y,lambda=lambda,intercept=intercept);
-  
+
   # Format design matrix to include intercept and standardize.
   if (intercept==TRUE){
     Xb <- cbind(rep(1,n),X);
@@ -201,7 +197,7 @@ SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE,
   }
   resid.lasso = (y - Xb %*% htheta)
   sigma.hat <- (1/n)*(t(Xb)%*%Xb);
-  
+
   # Estimation of U (or M in Javanard and Montanari's original paper)
   # Check to see if this is a low dimensional problem
   if ((n>=2*p)){
@@ -210,7 +206,7 @@ SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE,
   }else{
     tmp <- 0
   }
-  
+
   # If low-dimensional problem, use inverse of covariance as an estiamte of precision matrix
   # Otherwise, solve the convex optimizatio problem for U
   if ((n>=2*p)&&(tmp>=1e-4)){
@@ -218,21 +214,21 @@ SSLasso <- function (X, y, lambda = NULL, mu = NULL, intercept = TRUE,
   }else{
     U <- InverseLinfty(sigma.hat, n, resol=resol, mu=mu, maxiter=maxiter, threshold=threshold, verbose=verbose);
   }
-  
+
   # Debias Lasso
   unbiased.Lasso <- as.numeric(htheta + (U%*%t(Xb)%*%(y - Xb %*% htheta))/n);
-  
+
   # Scale them back to the original scaling.
   htheta <- htheta*col.norm;
   unbiased.Lasso <- unbiased.Lasso*col.norm;
   WUMat = Xb %*% t(U) %*% diag(col.norm)
-  
+
   if (intercept==TRUE){
     htheta <- htheta[2:pp];
     unbiased.Lasso <- unbiased.Lasso[2:pp];
     WUMat <- WUMat[,2:pp]
-  }  
-  
+  }
+
   returnList <- list("coef" = htheta,
                      "unb.coef" = unbiased.Lasso,
                      "WUMat" = WUMat,

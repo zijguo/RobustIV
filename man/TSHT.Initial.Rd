@@ -23,8 +23,7 @@ TSHT.Initial(
 
 \item{ITT_D}{a numeric, non-missing vector estimating each instrument's effect on the treatment}
 
-\item{WUMat}{an n by pz numeric, non-missing matrix that computes the precision of W
-(ex1 t(WUMat) %*% WUMat / n = (W^T W/n)^(-1))  (ex2 U = (W^T W/n)^(-1))}
+\item{WUMat}{an n by pz numeric, non-missing matrix that computes the precision of W}
 
 \item{SigmaSqY}{a numeric, non-missing, positive scalar value estimating the error variance of Y in the reduced-form model of Y}
 
@@ -43,6 +42,7 @@ TSHT.Initial(
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+    \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
 }
 \description{
 This modifies the original TSHT function and produces an initial esitmator for sampling and searching

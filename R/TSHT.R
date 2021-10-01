@@ -21,7 +21,7 @@
 #'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#' @import intervals
+#' @importFrom intervals Intervals interval_union
 #' @export
 #'
 #' @examples
@@ -253,9 +253,9 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
+#' @importFrom igraph as.undirected graph_from_adjacency_matrix largest.cliques as_ids Reduce
 #' @export
 #'
-#' @import igraph
 #'
 TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FALSE,tuning = 2.01,max_clique) {
   # Check ITT_Y and ITT_D

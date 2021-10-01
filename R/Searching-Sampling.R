@@ -24,7 +24,7 @@
 #' @import AER
 #' @import MASS
 #' @import sandwich
-#' @import intervals
+#' @importFrom intervals Intervals interval_union
 #' @export
 #'
 #' @examples
@@ -567,7 +567,6 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #' @param ITT_Y a numeric, non-missing vector estimating each instrument's effect on the outcome
 #' @param ITT_D a numeric, non-missing vector estimating each instrument's effect on the treatment
 #' @param WUMat an n by pz numeric, non-missing matrix that computes the precision of W
-#' (ex1 t(WUMat) %*% WUMat / n = (W^T W/n)^(-1))  (ex2 U = (W^T W/n)^(-1))
 #' @param SigmaSqY a numeric, non-missing, positive scalar value estimating the error variance of Y in the reduced-form model of Y
 #' @param SigmaSqD a numeric, non-missing, positive scalar value estimating the error variance of D in the reduced-form model of D
 #' @param SigmaYD a numeric, non-missing, scalar value estimating the covariance of the error terms in the reduced-form models of Y and D
@@ -579,9 +578,10 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#'
+#'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
+#' @importFrom igraph as.undirected graph_from_adjacency_matrix largest.cliques as_ids Reduce
 #' @export
-#' @import igraph
+#'
 #'
 TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW, alpha = 0.05,
                          bootstrap=FALSE,tuning = 2.01,max_clique=FALSE) {
