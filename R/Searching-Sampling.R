@@ -22,7 +22,6 @@
 #' \item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{max_clique} is \code{TRUE}.}
 #' \item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #' @import MASS
-#' @import sandwich
 #' @export
 #'
 #' @examples
