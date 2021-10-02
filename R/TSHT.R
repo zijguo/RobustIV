@@ -183,12 +183,12 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
   WUMat = W %*% (solve(covW))[,1:pz]
 
   # First Part (OLS Estimation)
-  qrW = qr(W)
-  ITT_Y = qr.coef(qrW,Y)[1:pz]
-  ITT_D = qr.coef(qrW,D)[1:pz]
-  SigmaSqY = sum(qr.resid(qrW,Y)^2)/(n -p)
-  SigmaSqD = sum(qr.resid(qrW,D)^2)/(n -p)
-  SigmaYD = sum(qr.resid(qrW,Y) * qr.resid(qrW,D)) / (n - p)
+  qrW = Matrix::qr(W)
+  ITT_Y = Matrix::qr.coef(qrW,Y)[1:pz]
+  ITT_D = Matrix::qr.coef(qrW,D)[1:pz]
+  SigmaSqY = sum(Matrix::qr.resid(qrW,Y)^2)/(n -p)
+  SigmaSqD = sum(Matrix::qr.resid(qrW,D)^2)/(n -p)
+  SigmaYD = sum(Matrix::qr.resid(qrW,Y) * Matrix::qr.resid(qrW,D)) / (n - p)
 
   return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
 }
