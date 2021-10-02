@@ -191,7 +191,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
   CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
   uni<- intervals::Intervals(CI.initial)
-  CI.initial.union<-as.matrix(interval_union(uni))
+  CI.initial.union<-as.matrix(intervals::interval_union(uni))
   beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
 
   ### conduct the initial searching and output a refined range [L,U] ###
