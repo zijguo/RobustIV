@@ -213,7 +213,6 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
 #'     \item{\code{SigmaYD}}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
 #' @export
 #'
-#' @import Matrix
 #' @importFrom flare slim
 #' @importFrom glmnet glmnet
 #' @importFrom stats qnorm coef
