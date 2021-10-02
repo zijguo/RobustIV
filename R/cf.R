@@ -62,7 +62,6 @@ cf <- function(outcome.formula,treatment.formula){
 #'    \item{\code{p.value}}{scalar numeric value : asymptotic chi square p-value of Hausman statistic}
 #' @export
 #'
-#' @importFrom AER ivreg
 #'
 #' @examples
 #'
@@ -87,7 +86,7 @@ pretest <- function(outcome.formula,treatment.formula){
   treatment.temp <- gsub(pattern='\\s',replacement="",x=treatment.formula)
   iv.formula <- as.formula(paste(outcome.temp[2],"~",outcome.temp[3],"|",treatment.temp[3]))
 
-  tsls.model <- ivreg(iv.formula)
+  tsls.model <- AER::ivreg(iv.formula)
   iv.coef <- coef(tsls.model)
   iv.vcov <- vcov(tsls.model)
 
@@ -133,7 +132,6 @@ pretest <- function(outcome.formula,treatment.formula){
 #'    \item{\code{coefficients}}{scalar numeric value: the estimate of the treatment effect}
 #'    \item{\code{vcov}}{numeric matrix: estimated covariance matrix of coefficients}
 #' @export
-#' @importFrom AER ivreg
 #'
 #' @examples
 #' #' ### Generate the data
@@ -156,7 +154,7 @@ tsls <- function(outcome.formula,treatment.formula){
   treatment.temp <- gsub(pattern='\\s',replacement="",x=treatment.formula)
   iv.formula <- as.formula(paste(outcome.temp[2],"~",outcome.temp[3],"|",treatment.temp[3]))
 
-  tsls.model <- ivreg(iv.formula)
+  tsls.model <- AER::ivreg(iv.formula)
   iv.coef <- coef(tsls.model)
   iv.vcov <- vcov(tsls.model)
 
