@@ -21,7 +21,6 @@
 #'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #'     \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#' @importFrom intervals Intervals interval_union
 #' @export
 #'
 #' @examples
@@ -127,9 +126,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
       beta.temp[i,] <- betaHat
       betavar.temp[i,] <- betaVarHat
     }
-    uni<- Intervals(CI.temp)
+    uni<- intervals::Intervals(CI.temp)
     ###### construct the confidence interval by taking a union
-    CI.union<-as.matrix(interval_union(uni))
+    CI.union<-as.matrix(intervals::interval_union(uni))
     # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
     # ci <- as.vector(CI.union)
 
@@ -253,7 +252,6 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
-#' @importFrom igraph as.undirected graph_from_adjacency_matrix largest.cliques as_ids Reduce
 #' @export
 #'
 #'
@@ -315,9 +313,9 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FA
   diag(VHats.boot.sym) <- 1
   # maximal clique
   if (max_clique) {
-    voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
-    max.clique <- largest.cliques(voting.graph)
-    VHat <- unique(as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
+    voting.graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(VHats.boot.sym))
+    max.clique <- igraph::largest.cliques(voting.graph)
+    VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     VHat <- sort(as.numeric(VHat))
   } else {
     # Voting
@@ -363,7 +361,7 @@ cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
   Cov.D<-SigmaSqD*unit.matrix
   max.vec<-rep(NA,N)
   for(j in 1:N){
-    gamma.s<-mvrnorm(1, rep(0,pz), Cov.D)
+    gamma.s<-MASS::mvrnorm(1, rep(0,pz), Cov.D)
     SE.norm<-diag(unit.matrix)^{1/2}
     max.vec[j]<-max(abs(gamma.s/SE.norm))
   }

@@ -21,10 +21,8 @@
 #' \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
 #' \item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{max_clique} is \code{TRUE}.}
 #' \item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#' @import AER
 #' @import MASS
 #' @import sandwich
-#' @importFrom intervals Intervals interval_union
 #' @export
 #'
 #' @examples
@@ -154,8 +152,8 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
       CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
       CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
       CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
-      uni<- Intervals(CI.initial)
-      CI.initial.union<-as.matrix(interval_union(uni))
+      uni<- intervals::Intervals(CI.initial)
+      CI.initial.union<-as.matrix(intervals::interval_union(uni))
       beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
       CI.sea<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,alpha,
                            beta.grid=beta.grid.seq,bootstrap=FALSE)
@@ -192,7 +190,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
   CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
   CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
-  uni<- Intervals(CI.initial)
+  uni<- intervals::Intervals(CI.initial)
   CI.initial.union<-as.matrix(interval_union(uni))
   beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
 
@@ -261,7 +259,7 @@ cut.off<-function(SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,pz,alpha = 0.05,
   Cov1<-cbind(SigmaSqD*unit.matrix,SigmaYD*unit.matrix)
   Cov2<-cbind(SigmaYD*unit.matrix,SigmaSqY*unit.matrix)
   Cov.total<-rbind(Cov1,Cov2)
-  Gen.mat<-mvrnorm(N, rep(0,2*pz), Cov.total)
+  Gen.mat<-MASS::mvrnorm(N, rep(0,2*pz), Cov.total)
   #se.b<-sqrt(SigmaSqY+b^2*SigmaSqD-2*b*SigmaYD)
   SE.norm<-diag(unit.matrix)^{1/2}
   sample.sim<-rep(0,N)
@@ -279,7 +277,7 @@ cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
   Cov.D<-SigmaSqD*unit.matrix
   max.vec<-rep(NA,N)
   for(j in 1:N){
-    gamma.s<-mvrnorm(1, rep(0,pz), Cov.D)
+    gamma.s<-MASS::mvrnorm(1, rep(0,pz), Cov.D)
     SE.norm<-diag(unit.matrix)^{1/2}
     max.vec[j]<-max(abs(gamma.s/SE.norm))
   }
@@ -386,9 +384,9 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
     {
       CI.search<-as.matrix(CI)
     }else{
-      uni<- Intervals(CI)
+      uni<- intervals::Intervals(CI)
       ###### construct the confidence interval by taking a union
-      CI.search<-as.matrix(interval_union(uni))
+      CI.search<-as.matrix(intervals::interval_union(uni))
       # CI.search <- t(as.matrix(c(min(CI.search),max(CI.search)))) #added
     }
     return(list(CI.search=CI.search,rule=rule,valid.grid=valid.grid))
@@ -465,7 +463,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
     Cov.total<-rbind(Cov1,Cov2)
 
     for(m in 1:M){
-      Gen.mat<-mvrnorm(1, rep(0,2*pz), Cov.total)
+      Gen.mat<-MASS::mvrnorm(1, rep(0,2*pz), Cov.total)
       ITT_Y.sample<-ITT_Y-Gen.mat[(pz+1):(2*pz)]
       ITT_D.sample<-ITT_D-Gen.mat[1:pz]
       ###### generating indepedent copies
@@ -495,7 +493,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
       #print(rho)
       rho<-1.25*rho
       for(m in 1:M){
-        Gen.mat<-mvrnorm(1, rep(0,2*pz), Cov.total)
+        Gen.mat<-MASS::mvrnorm(1, rep(0,2*pz), Cov.total)
         ITT_Y.sample<-ITT_Y-Gen.mat[(pz+1):(2*pz)]
         ITT_D.sample<-ITT_D-Gen.mat[1:pz]
 
@@ -531,9 +529,9 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
     {
       CI.union<-as.matrix(CI)
     }else{
-      uni<- Intervals(CI)
+      uni<- intervals::Intervals(CI)
       ###### construct the confidence interval by taking a union
-      CI.union<-as.matrix(interval_union(uni))
+      CI.union<-as.matrix(intervals::interval_union(uni))
       # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
 
     }
@@ -579,7 +577,6 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
-#' @importFrom igraph as.undirected graph_from_adjacency_matrix largest.cliques as_ids Reduce
 #' @export
 #'
 #'
@@ -643,9 +640,9 @@ TSHT.Initial <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW, alpha
 
   # maximal clique
   if (max_clique) {
-    voting.graph <- as.undirected(graph_from_adjacency_matrix(VHats.boot.sym))
-    max.clique <- largest.cliques(voting.graph)
-    VHat <- unique(as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
+    voting.graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(VHats.boot.sym))
+    max.clique <- igraph::largest.cliques(voting.graph)
+    VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     VHat <- sort(as.numeric(VHat))
   } else {
     # Voting
