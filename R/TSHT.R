@@ -103,8 +103,8 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
 
   # Estimate Valid IVs
   SetHats = TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                      SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,tuning=tuning,
-                      max_clique = max_clique)
+                      SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,
+                      covW=inputs$covW,tuning=tuning,max_clique = max_clique)
   VHat = SetHats$VHat; SHat = SetHats$SHat
 
 
@@ -169,6 +169,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
 #'     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the outcome model.}
 #'     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the treatment model.}
 #'     \item{\code{SigmaYD}}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
+#'     \item{\code{covW}}{a numeric, non-missing matrix that computes the sample covariance of W}
 #' @export
 #'
 TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
@@ -190,7 +191,7 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
   SigmaSqD = sum(Matrix::qr.resid(qrW,D)^2)/(n -p)
   SigmaYD = sum(Matrix::qr.resid(qrW,Y) * Matrix::qr.resid(qrW,D)) / (n - p)
 
-  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
+  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD,covW=covW))
 }
 
 
@@ -211,6 +212,7 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
 #'     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the outcome model.}
 #'     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the treatment model.}
 #'     \item{\code{SigmaYD}}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
+#'     \item{\code{covW}}{a numeric, non-missing matrix that computes the sample covariance of W}
 #' @export
 #'
 #' @importFrom flare slim
@@ -218,6 +220,7 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
 #' @importFrom stats qnorm coef
 TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
   n = nrow(W)
+  covW = t(W) %*% W /n #this should automatically turn covW into a matrix
   # Fit Reduced-Form Model for Y and D
   model_Y <- SSLasso(X=W,y=Y,intercept=intercept,verbose=FALSE)
   model_D = SSLasso(X=W,y=D,intercept=intercept,verbose=FALSE)
@@ -229,7 +232,7 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
   SigmaYD =sum(resid_Y * resid_D)/n
   WUMat = model_D$WUMat[,1:(pz)]
 
-  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
+  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD,covW=covW))
 }
 
 
@@ -243,6 +246,7 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @param SigmaSqY a numeric scalar denoting the consistent estimator of the noise level in the outcome model.
 #' @param SigmaSqD a numeric scalar denoting the consistent estimator of the noise level in the treatment model.
 #' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
+#' @param covW a numeric, non-missing matrix that computes the sample covariance of W
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param bootstrap a logical value, default by FALSE(What is this for in TSHT.Initial?).
 #' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix.
@@ -254,7 +258,7 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @export
 #'
 #'
-TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FALSE,tuning = 2.01,max_clique) {
+TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap = FALSE,tuning = 2.01,max_clique) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))

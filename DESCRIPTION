@@ -11,3 +11,6 @@ LazyData: true
 RoxygenNote: 7.1.2
 Imports: AER, flare, glmnet, MASS, stats, dr, orthoDr, foreach, doParallel, igraph, intervals
 NeedsCompilation: no
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

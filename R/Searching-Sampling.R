@@ -337,9 +337,10 @@ analysis.CI<-function(CI.matrix,true.val=1,grid.size=n^{-0.8}){
 Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
                        alpha = 0.05,beta.grid=NULL,bootstrap=TRUE){
   pz<-ncol(WUMat)
+  n = nrow(WUMat)
   if(length(InitiSet)==0){
     warning("No valid IV! OLS is used.")
-    CI.search=t(as.matrix(confint(lm(Y~D+W))[2,]))
+    CI.search=t(as.matrix(stats::confint(lm(Y~D+W))[2,]))
     rule<-FALSE
     return(list(CI.search=CI.search,rule=rule))
   }else{
@@ -429,9 +430,10 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
                                 WUMat,alpha = 0.05,alpha0 = 0.01,beta.grid=NULL,rho=NULL,
                                 M=1000,bootstrap=TRUE){
   pz<-ncol(WUMat)
+  n = nrow(WUMat)
   if(length(InitiSet)==0){
     warning("No valid IV! OLS is used.")
-    CI.union=t(as.matrix(confint(lm(Y~D+W))[2,]))
+    CI.union=t(as.matrix(stats::confint(lm(Y~D+W))[2,]))
     rule<-FALSE
     CI=CI.union
     return(list(CI.union=CI.union,rule=rule,CI=CI))
@@ -482,7 +484,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
         CI[m,2]<-max(beta.grid[which(valid.grid.sample[m,]>threshold.size)])
       }
     }
-    CI<-na.omit(CI)
+    CI<-stats::na.omit(CI)
 
     delta <- 0.05
     while((dim(as.matrix(CI))[1]<min(0.05*M,50)) && (rho<0.5)){
@@ -503,7 +505,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
           valid.grid.sample[m,j]<-sum(abs(ITT_Y.sample[InitiSet]-b*ITT_D.sample[InitiSet])<rho*Tn*se.b*SE.norm[InitiSet])
         }
 
-        if (t(Gen.mat)%*%solve(Cov.total,Gen.mat)<=(1+delta)*qchisq(p = 1-alpha0,df = 2*pz)) {
+        if (t(Gen.mat)%*%solve(Cov.total,Gen.mat)<=(1+delta)*stats::qchisq(p = 1-alpha0,df = 2*pz)) {
           M0 <- c(M0,m)
         }
 
@@ -517,7 +519,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
           CI[m,2]<-max(beta.grid[which(valid.grid.sample[m,]>threshold.size)])
         }
       }
-      CI<-na.omit(CI)
+      CI<-stats::na.omit(CI)
     }
     rule<-TRUE
     if(dim(as.matrix(CI))[1]==0){
@@ -566,6 +568,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
 #' @param SigmaSqY a numeric, non-missing, positive scalar value estimating the error variance of Y in the reduced-form model of Y
 #' @param SigmaSqD a numeric, non-missing, positive scalar value estimating the error variance of D in the reduced-form model of D
 #' @param SigmaYD a numeric, non-missing, scalar value estimating the covariance of the error terms in the reduced-form models of Y and D
+#' @param covW a numeric, non-missing matrix that computes the sample covariance of W
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
 #' @param bootstrap a boolean scalar indicating to implement bootstrap, with default TRUE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater than 2 (default = 2.01)

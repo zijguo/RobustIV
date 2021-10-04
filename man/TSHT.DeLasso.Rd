@@ -24,6 +24,7 @@ TSHT.DeLasso(Y, D, W, pz, intercept = TRUE)
     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the outcome model.}
     \item{\code{SigmaSqY}}{a numeric scalar denoting the consistent estimator of the noise level in the treatment model.}
     \item{\code{SigmaYD}}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
+    \item{\code{covW}}{a numeric, non-missing matrix that computes the sample covariance of W}
 }
 \description{
 This function provides the estimates of the necessary inputs of TSHT method in a high-dimensional setting using Debiased LASSO. This function shares the same inputs and outputs with the function \code{\link{TSHT.OLS}}.

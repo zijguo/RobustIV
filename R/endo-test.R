@@ -106,12 +106,12 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,tuning=tuning,max_clique = max_clique)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,tuning=tuning,max_clique = max_clique)
     Set = SetHats$VHat
   } else {
     SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,tuning=tuning)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,tuning=tuning)
     Set = SetHats
   }
   WUMat = inputs$WUMat
@@ -147,6 +147,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
 #' @param SigmaSqY a numeric scalar denoting the consistent estimator of the noise level in the outcome model.
 #' @param SigmaSqD a numeric scalar denoting the consistent estimator of the noise level in the treatment model.
 #' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
+#' @param covW a numeric, non-missing matrix that computes the sample covariance of W
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param bootstrap a logical value, default by FALSE.
 #'
@@ -154,7 +155,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #' @export
 #'
-endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,bootstrap = FALSE,tuning = 2.01) {
+endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap = FALSE,tuning = 2.01) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))

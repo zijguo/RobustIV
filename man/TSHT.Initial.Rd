@@ -31,6 +31,8 @@ TSHT.Initial(
 
 \item{SigmaYD}{a numeric, non-missing, scalar value estimating the covariance of the error terms in the reduced-form models of Y and D}
 
+\item{covW}{a numeric, non-missing matrix that computes the sample covariance of W}
+
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
 \item{bootstrap}{a boolean scalar indicating to implement bootstrap, with default TRUE.}

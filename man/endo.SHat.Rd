@@ -11,6 +11,7 @@ endo.SHat(
   SigmaSqY,
   SigmaSqD,
   SigmaYD,
+  covW,
   bootstrap = FALSE,
   tuning = 2.01
 )
@@ -27,6 +28,8 @@ endo.SHat(
 \item{SigmaSqD}{a numeric scalar denoting the consistent estimator of the noise level in the treatment model.}
 
 \item{SigmaYD}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
+
+\item{covW}{a numeric, non-missing matrix that computes the sample covariance of W}
 
 \item{bootstrap}{a logical value, default by FALSE.}
 
