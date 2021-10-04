@@ -291,7 +291,7 @@ cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
 
 ##### Functions: handling the (possible) union of CIs
 ##### CI.matrix is a matrix, where each row represents a CI
-analysis.CI<-function(CI.matrix,true.val=1,grid.size=n^{-0.8}){
+analysis.CI<-function(CI.matrix,true.val=1,grid.size){
   #### number of rows in the CI.matrix
   d<-dim(CI.matrix)[1]
   CI.coverage<-0

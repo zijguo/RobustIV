@@ -37,6 +37,8 @@ Searching.CI.Sampling(
 
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
+\item{alpha0}{a numeric scalar value between 0 and 1 indicating the threshold level for the samples for Sampling method, with default 0.01.}
+
 \item{beta.grid}{a numeric vector denoting candidates for betahat.}
 
 \item{rho}{a numeric scalar denoting thresholding level used in the sampling property.}
