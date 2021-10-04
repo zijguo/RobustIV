@@ -151,13 +151,13 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
       CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
       CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
       uni<- intervals::Intervals(CI.initial)
-      CI.initial.union<-base::as.matrix(intervals::interval_union(uni))
+      CI.initial.union<-as.matrix(intervals::interval_union(uni))
       beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
       CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
                            SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                            beta.grid=beta.grid.seq,bootstrap=FALSE)
       CI.temp<-CI.sea$CI.search
-      beta.grid<-analysis.CI(base::as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+      beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
 
       ### conduct the refined searching ###
 
@@ -165,14 +165,14 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
                                    SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                                    beta.grid,bootstrap=boot.value)
       CI.search<-CI.sea.refined$CI.search
-      CI.clique[i,] <- t(base::as.matrix(c(min(CI.search),max(CI.search)))) # min and max of CIs
+      CI.clique[i,] <- t(as.matrix(c(min(CI.search),max(CI.search)))) # min and max of CIs
       max.clique.mat[i,] <- V0.hat
       rule.clique[i,] <- CI.sea.refined$rule
       if (Sampling) {
         CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
                                            SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                                            beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
-        CI.clique[i,]<-t(base::as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2])))) # min and max of CIs
+        CI.clique[i,]<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2])))) # min and max of CIs
         rule.clique[i,] <- CI.sampling$rule
       }
     }
@@ -191,7 +191,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
   CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
   uni<- intervals::Intervals(CI.initial)
-  CI.initial.union<-base::as.matrix(intervals::interval_union(uni))
+  CI.initial.union<-as.matrix(intervals::interval_union(uni))
   beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
 
   ### conduct the initial searching and output a refined range [L,U] ###
@@ -200,7 +200,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
                        SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                        beta.grid=beta.grid.seq,bootstrap=FALSE)
   CI.temp<-CI.sea$CI.search
-  beta.grid<-analysis.CI(base::as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+  beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
 
   ### conduct the refined searching ###
 
@@ -208,13 +208,13 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
                                SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                                beta.grid,bootstrap=boot.value)
   CI.search<-CI.sea.refined$CI.search
-  CI.temp <- t(base::as.matrix(c(min(CI.search),max(CI.search))))
+  CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
   ### conduct the refined sampling ###
   if (Sampling) {
     CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
                                        SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                                        beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
-    CI.temp<-t(base::as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
+    CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
     if (max_clique) {
       return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat = V0.hat,
                   CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
@@ -297,6 +297,7 @@ analysis.CI<-function(CI.matrix,true.val=1,grid.size){
   CI.coverage<-0
   CI.len<-0
   grid.seq<-NULL
+  print(CI.matrix)
   for (l in 1: d){
     CI.len<-CI.len+CI.matrix[l,2]-CI.matrix[l,1]
     if((CI.matrix[l,2]>true.val)*(CI.matrix[l,1]<true.val)==1){
@@ -344,7 +345,7 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
   n = nrow(WUMat)
   if(length(InitiSet)==0){
     warning("No valid IV! OLS is used.")
-    CI.search=t(base::as.matrix(stats::confint(lm(Y~D+W))[2,]))
+    CI.search=t(as.matrix(stats::confint(lm(Y~D+W))[2,]))
     rule<-FALSE
     return(list(CI.search=CI.search,rule=rule))
   }else{
@@ -383,14 +384,14 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
     upper.index<-sel.index+1
     upper.index[length(upper.index)]<-min(upper.index[length(upper.index)],n.beta)
     CI[,2]<-beta.grid[upper.index]
-    if(dim(base::as.matrix(CI))[1]==1)
+    if(dim(as.matrix(CI))[1]==1)
     {
-      CI.search<-base::as.matrix(CI)
+      CI.search<-as.matrix(CI)
     }else{
       uni<- intervals::Intervals(CI)
       ###### construct the confidence interval by taking a union
-      CI.search<-base::as.matrix(intervals::interval_union(uni))
-      # CI.search <- t(base::as.matrix(c(min(CI.search),max(CI.search)))) #added
+      CI.search<-as.matrix(intervals::interval_union(uni))
+      # CI.search <- t(as.matrix(c(min(CI.search),max(CI.search)))) #added
     }
     return(list(CI.search=CI.search,rule=rule,valid.grid=valid.grid))
   }
@@ -438,7 +439,7 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
   n = nrow(WUMat)
   if(length(InitiSet)==0){
     warning("No valid IV! OLS is used.")
-    CI.union=t(base::as.matrix(stats::confint(lm(Y~D+W))[2,]))
+    CI.union=t(as.matrix(stats::confint(lm(Y~D+W))[2,]))
     rule<-FALSE
     CI=CI.union
     return(list(CI.union=CI.union,rule=rule,CI=CI))
@@ -492,9 +493,9 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
     CI<-stats::na.omit(CI)
 
     delta <- 0.05
-    while((dim(base::as.matrix(CI))[1]<min(0.05*M,50)) && (rho<0.5)){
+    while((dim(as.matrix(CI))[1]<min(0.05*M,50)) && (rho<0.5)){
       M0 <- NULL
-      #print(base::as.matrix(CI)[1])
+      #print(as.matrix(CI)[1])
       #print(rho)
       rho<-1.25*rho
       for(m in 1:M){
@@ -527,17 +528,17 @@ Searching.CI.Sampling<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,
       CI<-stats::na.omit(CI)
     }
     rule<-TRUE
-    if(dim(base::as.matrix(CI))[1]==0){
+    if(dim(as.matrix(CI))[1]==0){
       rule<-FALSE
-      CI.union<-t(base::as.matrix(c(min(beta.grid),max(beta.grid))))
-    }else if(dim(base::as.matrix(CI))[1]==1)
+      CI.union<-t(as.matrix(c(min(beta.grid),max(beta.grid))))
+    }else if(dim(as.matrix(CI))[1]==1)
     {
-      CI.union<-base::as.matrix(CI)
+      CI.union<-as.matrix(CI)
     }else{
       uni<- intervals::Intervals(CI)
       ###### construct the confidence interval by taking a union
-      CI.union<-base::as.matrix(intervals::interval_union(uni))
-      # CI.union <- t(base::as.matrix(c(min(CI.union),max(CI.union)))) # added
+      CI.union<-as.matrix(intervals::interval_union(uni))
+      # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
 
     }
     #CI.upper<-quantile(CI[,2],0.975)
