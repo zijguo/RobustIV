@@ -153,23 +153,25 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
       uni<- intervals::Intervals(CI.initial)
       CI.initial.union<-as.matrix(intervals::interval_union(uni))
       beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
-      CI.sea<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,alpha,
+      CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                           SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                            beta.grid=beta.grid.seq,bootstrap=FALSE)
       CI.temp<-CI.sea$CI.search
       beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
 
       ### conduct the refined searching ###
 
-      CI.sea.refined<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,
-                                   WUMat,alpha,beta.grid,bootstrap=boot.value)
+      CI.sea.refined<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                                   SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                                   beta.grid,bootstrap=boot.value)
       CI.search<-CI.sea.refined$CI.search
       CI.clique[i,] <- t(as.matrix(c(min(CI.search),max(CI.search)))) # min and max of CIs
       max.clique.mat[i,] <- V0.hat
       rule.clique[i,] <- CI.sea.refined$rule
       if (Sampling) {
-        CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,
-                                           V0.hat,WUMat,alpha,beta.grid,M=M,
-                                           bootstrap=boot.value,alpha0=alpha0)
+        CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                                           SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                                           beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
         CI.clique[i,]<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2])))) # min and max of CIs
         rule.clique[i,] <- CI.sampling$rule
       }
@@ -194,22 +196,24 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
 
   ### conduct the initial searching and output a refined range [L,U] ###
 
-  CI.sea<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,WUMat,alpha,
+  CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                       SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                        beta.grid=beta.grid.seq,bootstrap=FALSE)
   CI.temp<-CI.sea$CI.search
   beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
 
   ### conduct the refined searching ###
 
-  CI.sea.refined<-Searching.CI(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,V0.hat,
-                               WUMat,alpha,beta.grid,bootstrap=boot.value)
+  CI.sea.refined<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                               SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                               beta.grid,bootstrap=boot.value)
   CI.search<-CI.sea.refined$CI.search
   CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
   ### conduct the refined sampling ###
   if (Sampling) {
-    CI.sampling<-Searching.CI.Sampling(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,
-                                       V0.hat,WUMat,alpha,beta.grid,M=M,
-                                       bootstrap=boot.value,alpha0=alpha0)
+    CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                                       SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                                       beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
     CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
     if (max_clique) {
       return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat = V0.hat,
@@ -415,6 +419,7 @@ Searching.CI<-function(ITT_Y,ITT_D,SigmaSqD,SigmaSqY,SigmaYD,InitiSet,WUMat,
 #' @param InitiSet a set of pre-selected IVs (for majority rule: it is the set of relevant IVs; for plurality rule: it is a set of weakly violated IVs)
 #' @param WUMat a numeric matrix denoting WU where U is the precision matrix of W and W is the instrument-covariate matrix (Z, X).
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
+#' @param alpha0 a numeric scalar value between 0 and 1 indicating the threshold level for the samples for Sampling method, with default 0.01.
 #' @param beta.grid a numeric vector denoting candidates for betahat.
 #' @param rho a numeric scalar denoting thresholding level used in the sampling property.
 #' @param M a positive integer indicating the number of bootstrap resampling for computing the confidence interval, with default 1000.
