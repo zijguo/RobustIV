@@ -298,6 +298,7 @@ analysis.CI<-function(CI.matrix,true.val=1,grid.size){
   CI.len<-0
   grid.seq<-NULL
   print(CI.matrix)
+  print(true.val)
   for (l in 1: d){
     CI.len<-CI.len+CI.matrix[l,2]-CI.matrix[l,1]
     if((CI.matrix[l,2]>true.val)*(CI.matrix[l,1]<true.val)==1){
