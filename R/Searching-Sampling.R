@@ -157,7 +157,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
                            SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                            beta.grid=beta.grid.seq,bootstrap=FALSE)
       CI.temp<-CI.sea$CI.search
-      beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+      beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),n^{-0.6})$grid.seq
 
       ### conduct the refined searching ###
 
@@ -200,7 +200,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
                        SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
                        beta.grid=beta.grid.seq,bootstrap=FALSE)
   CI.temp<-CI.sea$CI.search
-  beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),beta,n^{-0.6})$grid.seq
+  beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),n^{-0.6})$grid.seq
 
   ### conduct the refined searching ###
 
@@ -291,19 +291,18 @@ cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
 
 ##### Functions: handling the (possible) union of CIs
 ##### CI.matrix is a matrix, where each row represents a CI
-analysis.CI<-function(CI.matrix,true.val=1,grid.size){
+analysis.CI<-function(CI.matrix,grid.size){
   #### number of rows in the CI.matrix
   d<-dim(CI.matrix)[1]
   CI.coverage<-0
   CI.len<-0
   grid.seq<-NULL
-  print(CI.matrix)
-  print(true.val)
+
   for (l in 1: d){
     CI.len<-CI.len+CI.matrix[l,2]-CI.matrix[l,1]
-    if((CI.matrix[l,2]>true.val)*(CI.matrix[l,1]<true.val)==1){
-      CI.coverage<-1
-    }
+    # if((CI.matrix[l,2]>true.val)*(CI.matrix[l,1]<true.val)==1){
+    #   CI.coverage<-1
+    # }
     grid.seq<-c(grid.seq,seq(CI.matrix[l,1],CI.matrix[l,2],by=grid.size))
   }
   return(list(CI.coverage=CI.coverage,CI.len=CI.len,grid.seq=grid.seq))
