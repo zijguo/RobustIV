@@ -300,9 +300,6 @@ analysis.CI<-function(CI.matrix,grid.size){
 
   for (l in 1: d){
     CI.len<-CI.len+CI.matrix[l,2]-CI.matrix[l,1]
-    # if((CI.matrix[l,2]>true.val)*(CI.matrix[l,1]<true.val)==1){
-    #   CI.coverage<-1
-    # }
     grid.seq<-c(grid.seq,seq(CI.matrix[l,1],CI.matrix[l,2],by=grid.size))
   }
   return(list(CI.coverage=CI.coverage,CI.len=CI.len,grid.seq=grid.seq))
