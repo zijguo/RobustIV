@@ -205,7 +205,7 @@ Guo, Z. and D. S. Small (2016), [Control function instrumental variable estimati
 causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), The Journal of Machine Learning Research 17(1), 3448–3482.
 
 ## SpotIV
-We use the SpotIV method in semiparametric model with possibly invalid IV assumption.
+We use the SpotIV method in semiparametric model with possibly invalid IV assumption. This method can take a lot of time when the dimensions are a little bigger. 
 ```R
 ### Generate a setting ###
 n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
@@ -228,6 +228,7 @@ SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, V= 1:J, w0 = c(z0,x0
 SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), parallel=FALSE)
 
 ### Implement SpotIV method without parallel computing option ###
+### This option is recommended to Mac users ###
 SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), parallel=TRUE)
 
 
