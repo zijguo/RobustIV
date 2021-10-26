@@ -57,29 +57,37 @@
 #'
 #'
 TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_clique=FALSE) {
-  # Check and Clean Input Type #
-  # Check Y
-  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
+  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
+  if (is.vector(Y)) {
+    Y <- cbind(Y)
+  }
   Y = as.numeric(Y)
 
   # Check D
-  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
+  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(D)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
   stopifnot(all(!is.na(D)))
+  if (is.vector(D)) {
+    D <- cbind(D)
+  }
   D = as.numeric(D)
 
   # Check Z
-  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),is.matrix(Z))
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
   stopifnot(all(!is.na(Z)))
-
+  if (is.vector(Z)) {
+    Z <- cbind(Z)
+  }
   # Check dimesions
-  stopifnot(length(Y) == length(D), length(Y) == nrow(Z))
+  stopifnot(nrow(Y) == nrow(D), nrow(Y) == nrow(Z))
 
   # Check X, if present
   if(!missing(X)) {
-    stopifnot((is.numeric(X) || is.logical(X)),is.matrix(X) && nrow(X) == nrow(Z))
+    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
     stopifnot(all(!is.na(X)))
-
+    if (is.vector(X)) {
+      X <- cbind(X)
+    }
     W = cbind(Z,X)
   } else {
     W = Z
@@ -90,6 +98,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
   stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
   stopifnot(is.character(method))
+  stopifnot(is.logical(max_clique))
 
   # Derive Inputs for TSHT
   n = length(Y); pz=ncol(Z)

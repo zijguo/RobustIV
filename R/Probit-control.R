@@ -19,6 +19,8 @@
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
+#'
+#' @importFrom stats binomial glm median pnorm sd
 #' @export
 #'
 #'
@@ -54,8 +56,37 @@
 
 
 ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=40, intercept=T, method='majority'){
-  stopifnot(method=='majority' | method=='valid')
+  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
+  stopifnot(all(!is.na(Y)))
+  if (is.vector(Y)) {
+    Y <- cbind(Y)
+  }
+  Y = as.numeric(Y)
   stopifnot(length(table(Y))==2)
+  # Check D
+  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(D)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
+  stopifnot(all(!is.na(D)))
+  if (is.vector(D)) {
+    D <- cbind(D)
+  }
+  D = as.numeric(D)
+
+  # Check Z
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
+  stopifnot(all(!is.na(Z)))
+  if (is.vector(Z)) {
+    Z <- cbind(Z)
+  }
+  # Check dimesions
+  stopifnot(nrow(Y) == nrow(D), nrow(Y) == nrow(Z))
+
+  # Check X, if present
+  if(!missing(X)) {
+    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
+    stopifnot(all(!is.na(X)))
+  }
+  stopifnot(method=='majority' | method=='valid')
+
   pz<- ncol(Z)
   px<-0
   if(!is.null(X)){

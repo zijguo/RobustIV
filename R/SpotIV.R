@@ -24,6 +24,7 @@
 #' @import orthoDr
 #' @import foreach
 #' @import doParallel
+#' @importFrom stats binomial glm median pnorm sd
 #' @export
 #'
 
@@ -60,6 +61,38 @@
 
 SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, intercept=TRUE,
                      d1, d2 , w0, bw=NULL, parallel=FALSE){
+  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
+  stopifnot(all(!is.na(Y)))
+  if (is.vector(Y)) {
+    Y <- cbind(Y)
+  }
+  Y = as.numeric(Y)
+
+  # Check D
+  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(D)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
+  stopifnot(all(!is.na(D)))
+  if (is.vector(D)) {
+    D <- cbind(D)
+  }
+  D = as.numeric(D)
+
+  # Check Z
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
+  stopifnot(all(!is.na(Z)))
+  if (is.vector(Z)) {
+    Z <- cbind(Z)
+  }
+  # Check dimesions
+  stopifnot(nrow(Y) == nrow(D), nrow(Y) == nrow(Z))
+
+  # Check X, if present
+  if(!missing(X)) {
+    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
+    stopifnot(all(!is.na(X)))
+  }
+
+
+
   pz<- ncol(Z)
   px<-0
   if(!is.null(X)){
@@ -162,7 +195,7 @@ SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
   Gam.init<-init.re$coef
   vGam<-vcov(init.re)*n
   if(M==1){
-    theta.hat <- orthoDr_reg(x=X.cov, y = Y, B.init=as.matrix(Gam.init,ncol=1), ndr=1)$B
+    theta.hat <- orthoDr_reg(x=X.cov, y = Y, B.initial =as.matrix(Gam.init,ncol=1), ndr=1)$B
   }else{
     theta.hat<-dr(Y ~ X.cov -1, method='sir', numdir=M)$evectors[,1:M] #using a faster computation
   }
