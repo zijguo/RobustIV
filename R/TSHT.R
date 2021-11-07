@@ -124,7 +124,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
     beta.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
     betavar.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
     for (i in 1:length(max.clique)) {
-      temp <- sort(max.clique[[i]])
+      temp <- sort(as.numeric(max.clique[[i]]))
       max.clique.mat[i,] <- temp
       AVHat = solve(A[temp,temp])
       betaHat = (t(inputs$ITT_Y[temp]) %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])
