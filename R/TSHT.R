@@ -151,12 +151,12 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
   betaVarHat = SigmaSq * (t(inputs$ITT_D[VHat]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[VHat,VHat] %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])^2
   if (!max_clique) {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci))
+    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci,voting.mat=SetHats$voting.mat))
   } else {
 
     return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=CI.union,
                 max.clique = max.clique.mat, CI.clique = CI.temp, beta.clique = beta.temp,
-                betavar.clique = betavar.temp))
+                betavar.clique = betavar.temp,voting.mat=SetHats$voting.mat))
   }
 
 }
@@ -359,9 +359,9 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap
   }
 
   if (max_clique) {
-    returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique)
+    returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique,voting.mat=VHats.boot.sym)
   } else {
-    returnList <- list(SHat=SHat,VHat=VHat)
+    returnList <- list(SHat=SHat,VHat=VHat,voting.mat=VHats.boot.sym)
   }
   return(returnList)
 }
