@@ -349,7 +349,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,
     VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     VHat <- sort(as.numeric(VHat))
   } else if (voting == 'MP') {
-    VHat <- union(VM.m,VM.p) # Union of majority and plurality winners
+    VHat <- as.numeric(union(VM.m,VM.p)) # Union of majority and plurality winners
   } else if (voting == 'Conservative'){
     V.set<-NULL
     for(index in VM.p){
