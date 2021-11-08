@@ -130,7 +130,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   stopifnot(method=='OLS' | method=='DeLasso')
   stopifnot(is.logical(Sampling))
   stopifnot(is.logical(boot.value))
-  stopifnot(voting=='TSHT' | voting=='MaxClique' | voting == 'Conservative')
+  stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
 
   n <- length(Y)
   pz<-ncol(Z)
