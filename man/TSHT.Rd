@@ -49,8 +49,6 @@ TSHT(
     \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
     \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of voted as valid and relevant IVs. Only returns when \code{voting} is \code{'MaxClique'}}
-
- @export
 }
 \description{
 Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
