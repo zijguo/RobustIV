@@ -112,7 +112,11 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
   n <- length(Y)
   Maj.pass=T
 
-  V <- ifelse(invalid,NULL,1:pz)
+  if (invalid) {
+    V <- NULL
+  } else {
+    V <- 1:pz
+  }
 
   #first-stage regression
   if(intercept){
