@@ -24,7 +24,7 @@
 #'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
 #'     \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of voted as valid and relevant IVs. Only returns when \code{voting} is \code{'MaxClique'}}
 #'
-#'  @export
+#' @export
 #'
 #' @examples
 #' \dontrun{
