@@ -45,7 +45,7 @@
 #'
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLasso",
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tuning=2.01,method="DeLasso",
                       invalid=TRUE, voting = 'MaxClique'){
   # Check and Clean Input Type #
   # Check Y
