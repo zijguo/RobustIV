@@ -13,7 +13,7 @@ ProbitControl(
   d2 = NULL,
   w0 = NULL,
   bs.Niter = 40,
-  intercept = T,
+  intercept = TRUE,
   method = "majority"
 )
 }
@@ -36,11 +36,10 @@ ProbitControl(
 
 \item{intercept}{a boolean scalar indicating to include the intercept or not. Default is TRUE.}
 
-\item{method}{'valid' or 'majority', indicating whether imposing the assumption of valid IVs (True) or possibly invalid IVs with majority rule (False). Default is True.}
+\item{method}{'valid' or 'majority', indicating whether imposing the assumption of valid IVs ('valid') or possibly invalid IVs with majority rule ('majority'). Default is majority.}
 }
 \value{
-\item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta/sig_u.}
+\item{\code{betaHat}}{a numeric scalar denoting the estimate of beta/sig_u.}
     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}

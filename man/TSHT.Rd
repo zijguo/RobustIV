@@ -11,9 +11,10 @@ TSHT(
   X,
   intercept = TRUE,
   alpha = 0.05,
+  boot.SHat = FALSE,
   tuning = 2.01,
   method = "OLS",
-  max_clique = FALSE
+  voting = "MaxClique"
 )
 }
 \arguments{
@@ -29,22 +30,27 @@ TSHT(
 
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
+
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
 \item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".}
 
-\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
+\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
 }
 \value{
-\item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
-    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
-    \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
+\item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
+    \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-    \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of }
-    \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-    \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-    \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+    \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
+    \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
+    \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
+    \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+    \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+    \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of voted as valid and relevant IVs. Only returns when \code{voting} is \code{'MaxClique'}}
+
+ @export
 }
 \description{
 Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.

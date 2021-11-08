@@ -12,7 +12,7 @@ endo.SHat(
   SigmaSqD,
   SigmaYD,
   covW,
-  bootstrap = FALSE,
+  boot.SHat = FALSE,
   tuning = 2.01
 )
 }
@@ -29,9 +29,9 @@ endo.SHat(
 
 \item{SigmaYD}{a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.}
 
-\item{covW}{a numeric, non-missing matrix that computes the sample covariance of W}
+\item{covW}{a numeric, non-missing matrix that computes the sample covariance of W.}
 
-\item{bootstrap}{a logical value, default by FALSE.}
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 }

@@ -14,7 +14,7 @@ endo.test(
   tuning = 2.01,
   method = "DeLasso",
   invalid = TRUE,
-  max_clique = FALSE
+  voting = "MaxClique"
 )
 }
 \arguments{
@@ -36,12 +36,14 @@ endo.test(
 
 \item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)}
 
-\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
+\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
+
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
 }
 \value{
-\item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs}
-   \item{\code{Q}}{numeric value : our endogeneity test statistic}
-   \item{\code{Sigma12}}{numeric value : estimated covaraince}
+\item{\code{Q}}{numeric value : our endogeneity test statistic.}
+   \item{\code{Sigma12}}{numeric value : estimated covaraince.}
+   \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs.}
 }
 \description{
 Endogneity test function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.

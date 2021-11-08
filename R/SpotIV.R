@@ -16,9 +16,11 @@
 #' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.
 
 #' @return
-#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+#'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+#'     \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 #' @import dr
 #' @import orthoDr
@@ -59,7 +61,7 @@
 #'
 #'
 
-SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, intercept=TRUE,
+SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, intercept=TRUE,
                      d1, d2 , w0, bw=NULL, parallel=FALSE){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
@@ -91,7 +93,14 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, interce
     stopifnot(all(!is.na(X)))
   }
 
+  # Check d1,d2, and w0
+  stopifnot(!missing(d1),!missing(d2),!missing(w0),is.numeric(d1),is.numeric(d2),is.numeric(w0))
 
+  # All the other argument
+  stopifnot(is.logical(intercept))
+  stopifnot(is.logical(invalid))
+  stopifnot(is.logical(parallel))
+  stopifnot(is.logical(M.est))
 
   pz<- ncol(Z)
   px<-0
@@ -102,6 +111,9 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, interce
   stopifnot(length(w0)==ncol(Z))
   n <- length(Y)
   Maj.pass=T
+
+  V <- ifelse(invalid,NULL,1:pz)
+
   #first-stage regression
   if(intercept){
     gam.re<- lm(D ~ Z)
@@ -132,7 +144,8 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, interce
     }
     VHat <- as.numeric(Select.re$VHat)
     beta.hat<-sapply(1:M, function(m) median(Gam.hat[SHat,m]/gam.hat[SHat]))
-    pi.hat<- Gam.hat - gam.hat %*% matrix(beta.hat,nrow=1,ncol=M)
+    beta.hat <- matrix(beta.hat,nrow=1,ncol=M)
+    pi.hat<- Gam.hat - gam.hat %*% beta.hat
   }else{###oracle method
     SIR.re <-SIR.est(X.cov=cbind(Z%*%gam.hat,Z[,-V],v.hat), Y, M= M, M.est=M.est)
     M <- ncol(SIR.re$theta.hat)
@@ -172,8 +185,8 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, V=NULL, interce
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }
 
-  return(list(Mhat=M, VHat = VHat, SHat=SHat, Maj.pass=Maj.pass,
-              betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd))
+  return(list(betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd,
+              SHat=SHat, VHat = VHat, Maj.pass=Maj.pass))
 }
 
 SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
@@ -181,7 +194,7 @@ SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
   n<-length(Y)
   if(M.est){
     nslice=ifelse(length(table(Y))==2,2,8)
-    SIR.re<-dr(Y ~ X.cov -1, method='sir', numdir=M, nslices=nslice)
+    SIR.re<-dr::dr(Y ~ X.cov -1, method='sir', numdir=M, nslices=nslice)
     evalues=SIR.re$evalues
     nobs.slice <- median(SIR.re$slice.info$slice.sizes)
     M <- which.max(
@@ -195,9 +208,9 @@ SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
   Gam.init<-init.re$coef
   vGam<-vcov(init.re)*n
   if(M==1){
-    theta.hat <- orthoDr_reg(x=X.cov, y = Y, B.initial =as.matrix(Gam.init,ncol=1), ndr=1)$B
+    theta.hat <- orthoDr::orthoDr_reg(x=X.cov, y = Y, B.initial =as.matrix(Gam.init,ncol=1), ndr=1)$B
   }else{
-    theta.hat<-dr(Y ~ X.cov -1, method='sir', numdir=M)$evectors[,1:M] #using a faster computation
+    theta.hat<-dr::dr(Y ~ X.cov -1, method='sir', numdir=M)$evectors[,1:M] #using a faster computation
   }
   list(theta.hat=theta.hat, vGam=vGam)
 }
@@ -237,9 +250,9 @@ Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=TRUE
     beta.j = ITT_Y[j] / ITT_D[j]
     pi.j = ITT_Y - ITT_D * beta.j
     #compute three components in eq(33)
-    Sig1.j <- Var.comp.est(Cov.gGam[1:pz,1:pz], ITT_D, j)
-    Sig2.j <- Var.comp.est(Cov.gGam[(pz+1):(2*pz),(pz+1):(2*pz)], ITT_D, j)
-    Sig3.j <-  Var.comp.est(Cov.gGam[1:pz,(pz+1):(2*pz)], ITT_D, j)
+    Sig1.j <- Var.comp.est(as.matrix(Cov.gGam[1:pz,1:pz]), ITT_D, j)
+    Sig2.j <- Var.comp.est(as.matrix(Cov.gGam[(pz+1):(2*pz),(pz+1):(2*pz)]), ITT_D, j)
+    Sig3.j <-  Var.comp.est(as.matrix(Cov.gGam[1:pz,(pz+1):(2*pz)]), ITT_D, j)
     sigmasq.j <- beta.j^2 *Sig1.j +  Sig2.j - 2* beta.j * Sig3.j
     PHat.bool.j <- abs(pi.j) <= sqrt(sigmasq.j) * tuning * sqrt(log(pz)/n)
     VHat.bool.j = PHat.bool.j * SHat.bool

@@ -7,21 +7,24 @@
 #' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
 #' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".
-#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
+#' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
 #'
 #' @return
-#'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
-#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
-#'     \item{\code{varHat}}{a numeric scalar denoting the estimated variance of betaHat.}
+#'     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
 #'     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-#'     \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of }
-#'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#'     \item{\code{betavar.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-#' @export
+#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+#'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
+#'     \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
+#'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
+#'     \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+#'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+#'     \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of voted as valid and relevant IVs. Only returns when \code{voting} is \code{'MaxClique'}}
+#'
+#'  @export
 #'
 #' @examples
 #' \dontrun{
@@ -56,7 +59,8 @@
 #' }
 #'
 #'
-TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_clique=FALSE) {
+TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.01,
+                 method="OLS", voting = 'MaxClique') {
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -96,9 +100,11 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
+  stopifnot(is.logical(boot.SHat))
   stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
-  stopifnot(is.character(method))
-  stopifnot(is.logical(max_clique))
+  stopifnot(method=='OLS' | method=='DeLasso')
+  stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
+
 
   # Derive Inputs for TSHT
   n = length(Y); pz=ncol(Z)
@@ -110,14 +116,23 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
     A = diag(pz)
   }
 
+  # Reduced form estimator
+  ITT_Y = inputs$ITT_Y;
+  ITT_D = inputs$ITT_D;
+  WUMat = inputs$WUMat;
+  SigmaSqD = inputs$SigmaSqD;
+  SigmaSqY = inputs$SigmaSqY;
+  SigmaYD=inputs$SigmaYD;
+  covW=inputs$covW
+
   # Estimate Valid IVs
-  SetHats = TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                      SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,SigmaYD=inputs$SigmaYD,
-                      covW=inputs$covW,tuning=tuning,max_clique = max_clique)
+  SetHats = TSHT.VHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
+                      SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,SigmaYD=SigmaYD,
+                      covW=covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
   VHat = SetHats$VHat; SHat = SetHats$SHat
 
 
-  if (max_clique) {
+  if (voting == 'MaxClique') {
     max.clique <- SetHats$max.clique
     max.clique.mat <- matrix(0,nrow = length(max.clique),ncol = length(max.clique[[1]]))
     CI.temp <- matrix(0,nrow = length(max.clique), ncol = 2)
@@ -127,9 +142,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
       temp <- sort(as.numeric(max.clique[[i]]))
       max.clique.mat[i,] <- VHat[temp]
       AVHat = solve(A[temp,temp])
-      betaHat = (t(inputs$ITT_Y[temp]) %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])
-      SigmaSq = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD
-      betaVarHat = SigmaSq * (t(inputs$ITT_D[temp]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[temp,temp] %*% AVHat %*% inputs$ITT_D[temp]) / (t(inputs$ITT_D[temp]) %*% AVHat %*% inputs$ITT_D[temp])^2
+      betaHat = (t(ITT_Y[temp]) %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])
+      SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
+      betaVarHat = SigmaSq * (t(ITT_D[temp]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[temp,temp] %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])^2
       ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
       CI.temp[i,] <- ci
       beta.temp[i,] <- betaHat
@@ -140,23 +155,20 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="OLS",max_
     CI.union<-as.matrix(intervals::interval_union(uni))
     # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
     # ci <- as.vector(CI.union)
-
   }
-
 
   # Obtain point est, se, and ci
   AVHat = solve(A[VHat,VHat])
-  betaHat = (t(inputs$ITT_Y[VHat]) %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])
-  SigmaSq = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD
-  betaVarHat = SigmaSq * (t(inputs$ITT_D[VHat]) %*% AVHat %*% (t(inputs$WUMat) %*% inputs$WUMat/ n)[VHat,VHat] %*% AVHat %*% inputs$ITT_D[VHat]) / (t(inputs$ITT_D[VHat]) %*% AVHat %*% inputs$ITT_D[VHat])^2
-  if (!max_clique) {
+  betaHat = (t(ITT_Y[VHat]) %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])
+  SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
+  betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
+  if (voting != 'MaxClique') {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=ci,voting.mat=SetHats$voting.mat))
+    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat))
   } else {
-
-    return(list(VHat = VHat,SHat=SHat,betaHat=betaHat,betaVarHat = betaVarHat,ci=CI.union,
-                max.clique = max.clique.mat, CI.clique = CI.temp, beta.clique = beta.temp,
-                betavar.clique = betavar.temp,voting.mat=SetHats$voting.mat))
+    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
+                beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp), CI.clique = CI.temp,
+                max.clique = max.clique.mat))
   }
 
 }
@@ -256,18 +268,20 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
 #' @param SigmaSqD a numeric scalar denoting the consistent estimator of the noise level in the treatment model.
 #' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
 #' @param covW a numeric, non-missing matrix that computes the sample covariance of W
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
-#' @param bootstrap a logical value, default by FALSE(What is this for in TSHT.Initial?).
-#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix.
+#' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
 #'
 #' @return
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
+#'     \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{voting} is \code{MaxClique}.}
+#'     \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
 #' @export
 #'
 #'
-TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap = FALSE,tuning = 2.01,max_clique) {
+TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,
+                      boot.SHat = FALSE,tuning = 2.01,voting = 'MaxClique') {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -284,12 +298,13 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap
 
   # Other Input check
   stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
+  stopifnot(voting=='TSHT' | voting=='MaxClique' | voting == 'Conservative')
 
   # Constants
   n = nrow(WUMat);
   pz = length(ITT_Y)
   # First Stage
-  if(bootstrap==TRUE){
+  if(boot.SHat==TRUE){
     Tn<-min(cut.off.IVStr(SigmaSqD,WUMat,pz,cut.prob = 0.95),sqrt(log(n))) ### this can be modified by the user
     SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
     SHat<-(1:pz)[abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm]
@@ -323,25 +338,21 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap
     }
   }
   diag(VHats.boot.sym) <- 1
-  # maximal clique
-  if (max_clique) {
+  # Voting method
+  VM= apply(VHats.boot.sym,1,sum)
+  VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
+  VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
+
+  if (voting == 'MaxClique') {
     voting.graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(VHats.boot.sym))
     max.clique <- igraph::largest.cliques(voting.graph)
     VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     VHat <- sort(as.numeric(VHat))
-  } else {
-    # Voting
-    #VM.1 = apply(VHats.bool,1,sum)
-    #VM.2 = apply(VHats.bool,2,sum)
-    #VM<-VM.1
-    #for(l in 1:length(VM.1)){
-    # VM[l]=min(VM.1[l],VM.2[l])
-    #}
-    VM= apply(VHats.boot.sym,1,sum)
-    VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
-    VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
+  } else if (voting == 'TSHT') {
+    VHat <- union(VM.m,VM.p) # Union of majority and plurality winners
+  } else if (voting == 'Conservative'){
     V.set<-NULL
-    for(index in union(VM.m,VM.p)){
+    for(index in VM.p){
       V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
     }
     VHat<-NULL
@@ -358,7 +369,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap
     VHat = 1:pz
   }
 
-  if (max_clique) {
+  if (voting == 'MaxClique') {
     returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique,voting.mat=VHats.boot.sym)
   } else {
     returnList <- list(SHat=SHat,VHat=VHat,voting.mat=VHats.boot.sym)

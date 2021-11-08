@@ -12,7 +12,7 @@ SpotIV(
   bs.Niter = 40,
   M = 2,
   M.est = TRUE,
-  V = NULL,
+  invalid = TRUE,
   intercept = TRUE,
   d1,
   d2,
@@ -36,8 +36,6 @@ SpotIV(
 
 \item{M.est}{True or False, whether estimate M based on BIC. Default is True.}
 
-\item{V}{the set of valid IVs for implementing the oracle control function method}
-
 \item{intercept}{a boolean scalar indicating to include the intercept or not. Default is TRUE.}
 
 \item{d1}{a scalar for computing CATE(d1,d2|w0).}
@@ -49,11 +47,15 @@ SpotIV(
 \item{bw}{a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
 
 \item{parallel}{True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.}
+
+\item{V}{the set of valid IVs for implementing the oracle control function method}
 }
 \value{
-\item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+\item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+    \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 }
 \description{

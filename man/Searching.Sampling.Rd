@@ -12,10 +12,13 @@ Searching.Sampling(
   intercept = TRUE,
   alpha = 0.05,
   alpha0 = 0.01,
+  boot.SHat = TRUE,
+  tuning = 2.01,
+  method = "OLS",
+  voting = "MaxClique",
   Sampling = TRUE,
   boot.value = TRUE,
-  M = 1000,
-  max_clique = FALSE
+  M = 1000
 )
 }
 \arguments{
@@ -33,22 +36,28 @@ Searching.Sampling(
 
 \item{alpha0}{a numeric scalar value between 0 and 1 indicating the sampling threshold level for the generated samples, with default 0.01.}
 
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
+
+\item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
+
+\item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".}
+
+\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
+
 \item{Sampling}{a boolean scalar indicating to implement Sampling method, with default TRUE.}
 
 \item{boot.value}{a boolean scalar indicating to implement bootstrap, with default TRUE.}
 
 \item{M}{a positive integer indicating the number of bootstrap resampling for computing the confidence interval, with default 1000.}
-
-\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.}
 }
 \value{
 \item{\code{CI}}{a two dimensional numeric vector denoting the unioned 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
 \item{\code{CI.matrix}}{a numeric matrix denoting CI for appropriate candidates of beta. Only returns when \code{Sampling} is \code{FALSE}.}
 \item{\code{rule}}{a boolean scalar denoting whether the identification condition is satisfied or not}
-\item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
-\item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
-\item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{max_clique} is \code{TRUE}.}
-\item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique. Only returns when \code{max_clique} is \code{TRUE}.}
+\item{\code{VHat.init}}{a numeric vector denoting the initially estimated set of valid and relevant IVs.}
+\item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
+\item{\code{rule.clique}}{a boolean matrix where each row represents whether the identification condition is satisfied or not. Only returns when \code{voting} is \code{'MaxClique'}.}
+\item{\code{max.cliques}}{a numeric matrix where each row represents each maximum clique of initial. Only returns when \code{voting} is \code{'MaxClique'}.}
 }
 \description{
 Construction of confidence intervals with Searching-Sampling method

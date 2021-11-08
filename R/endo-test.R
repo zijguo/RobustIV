@@ -9,16 +9,17 @@
 #' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
 #' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")
 #' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)
-#' @param max_clique an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix, with default FALSE.
+#' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
 #'
 #'
 #' @return
-#'    \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs}
-#'    \item{\code{Q}}{numeric value : our endogeneity test statistic}
-#'    \item{\code{Sigma12}}{numeric value : estimated covaraince}
+#'    \item{\code{Q}}{numeric value : our endogeneity test statistic.}
+#'    \item{\code{Sigma12}}{numeric value : estimated covaraince.}
+#'    \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs.}
 #' @export
 #'
 #' @examples
@@ -44,8 +45,8 @@
 #'
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLasso",invalid=TRUE,
-                      max_clique=FALSE){
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLasso",
+                      invalid=TRUE, voting = 'MaxClique'){
   # Check and Clean Input Type #
   # Check Y
 
@@ -89,7 +90,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
   stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
-  stopifnot(is.character(method))
+  stopifnot(method=='OLS' | method=='DeLasso')
 
   # Derive Inputs for Endogeneity test
   n = length(Y); pz=ncol(Z)
@@ -106,12 +107,12 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,tuning=tuning,max_clique = max_clique)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
     Set = SetHats$VHat
   } else {
     SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,tuning=tuning)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,boot.SHat = boot.SHat, tuning=tuning)
     Set = SetHats
   }
   WUMat = inputs$WUMat
@@ -134,7 +135,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
   }
 
 
-  return(list(VHat=Set,Q=Q,Sigma12=Sigma12))
+  return(list(Q=Q,Sigma12=Sigma12,VHat=Set))
 }
 
 #' @title Relevant Instrumental Variable Selection for endogeneity test
@@ -147,15 +148,15 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,tuning=2.01,method="DeLa
 #' @param SigmaSqY a numeric scalar denoting the consistent estimator of the noise level in the outcome model.
 #' @param SigmaSqD a numeric scalar denoting the consistent estimator of the noise level in the treatment model.
 #' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
-#' @param covW a numeric, non-missing matrix that computes the sample covariance of W
+#' @param covW a numeric, non-missing matrix that computes the sample covariance of W.
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
-#' @param bootstrap a logical value, default by FALSE.
 #'
 #' @return
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #' @export
 #'
-endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap = FALSE,tuning = 2.01) {
+endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,boot.SHat = FALSE,tuning = 2.01) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -177,7 +178,7 @@ endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,bootstrap
   n = nrow(WUMat);
   pz = length(ITT_Y)
   # First Stage
-  if(bootstrap==TRUE){
+  if(boot.SHat==TRUE){
     Tn<-min(cut.off.IVStr(SigmaSqD,WUMat,pz,cut.prob = 0.95),sqrt(log(n))) ### this can be modified by the user
     SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
     SHat<-(1:pz)[abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm]

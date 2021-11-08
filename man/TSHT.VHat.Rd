@@ -12,9 +12,9 @@ TSHT.VHat(
   SigmaSqD,
   SigmaYD,
   covW,
-  bootstrap = FALSE,
+  boot.SHat = FALSE,
   tuning = 2.01,
-  max_clique
+  voting = "MaxClique"
 )
 }
 \arguments{
@@ -32,16 +32,17 @@ TSHT.VHat(
 
 \item{covW}{a numeric, non-missing matrix that computes the sample covariance of W}
 
-\item{bootstrap}{a logical value, default by FALSE(What is this for in TSHT.Initial?).}
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
-\item{max_clique}{an option to replace the majority and plurality voting procedures with finding maximal clique in the IV voting matrix.}
+\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
 }
 \value{
 \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{max_clique} is \code{TRUE}.}
+    \item{\code{max.clique}}{a numeric list denoting the maximum cliques of valid and relevant IVs. Only return when \code{voting} is \code{MaxClique}.}
+    \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
 }
 \description{
 Implementation of the Two-Stage Hard Thresholding with Voting procedures.This function only takes the necessary inputs of the functions \code{\link{TSHT.OLS}} or \code{\link{TSHT.DeLasso}}. Any other methods to compute the necessary inputs can be adopted by the users according to their preferences.

@@ -6,14 +6,13 @@
 #' @param Z continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments.
 #' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
 #' @param intercept a boolean scalar indicating to include the intercept or not. Default is TRUE.
-#' @param method 'valid' or 'majority', indicating whether imposing the assumption of valid IVs (True) or possibly invalid IVs with majority rule (False). Default is True.
 #' @param d1 a scalar for computing CATE(d1,d2|z0).
 #' @param d2 a scalar for computing CATE(d1,d2|z0).
 #' @param w0  a (pz+px) by 1 vector for computing CATE(d1,d2|z0).
 #' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
+#' @param method 'valid' or 'majority', indicating whether imposing the assumption of valid IVs ('valid') or possibly invalid IVs with majority rule ('majority'). Default is majority.
 #'
 #' @return
-#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta/sig_u.}
 #'     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
@@ -55,7 +54,7 @@
 
 
 
-ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=40, intercept=T, method='majority'){
+ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=40, intercept=TRUE, method='majority'){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -85,7 +84,10 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
     stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
     stopifnot(all(!is.na(X)))
   }
+
+  # All the other argument
   stopifnot(method=='majority' | method=='valid')
+  stopifnot(is.logical(intercept))
 
   pz<- ncol(Z)
   px<-0
@@ -111,7 +113,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
     Gam.re<-glm(Y~cbind(Z,v.hat)-1, family=binomial(link='probit'))
     Gam.hat<-Gam.re$coef[-length(Gam.re$coef)]
     lam.hat<-Gam.re$coef[length(Gam.re$coef)]
-    Gam.cov<-n*vcov(Gam.re)[1:pz,1:pz]+lam.hat^2*gam.cov
+    Gam.cov<-as.matrix(n*vcov(Gam.re)[1:pz,1:pz]+lam.hat^2*gam.cov)
     Cov.gGam<-rbind(cbind(gam.cov,lam.hat^2*gam.cov),
                     cbind(lam.hat^2*Gam.cov, Gam.cov))
     #applying the majority rule
@@ -153,20 +155,36 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
     #bootstrap for sd
     bs.lst<-list()
     for(i in 1:bs.Niter){
-        bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
-        bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, d1=d1,d2=d2, w0=w0, SHat=SHat, method=method, intercept=intercept)
-    }
+      sample.true <- F
+      while(sample.true==F)
+        {tryCatch({
+            bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),];
+            bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, d1=d1,d2=d2,
+                            w0=w0, SHat=SHat, method=method, intercept=intercept);
+            sample.true<-T;
+            },error=function(e){
+            },finally={})
+        }
+      }
     cace.sd<-sqrt(mean((unlist(lapply(bs.lst, function(x) x[1]))-cace.hat)^2))
     beta.sd<-sqrt(mean((unlist(lapply(bs.lst, function(x) x[2]))-beta.hat)^2))
   }else{ #only compute the sd of beta.hat
     bs.lst<-list()
     for(i in 1:bs.Niter){
-      bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
-      bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, SHat=SHat, method=method, intercept=intercept)
+      sample.true <- F
+      while(sample.true==F)
+      {tryCatch({
+        bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),];
+        bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, d1=d1,d2=d2,
+                                     w0=w0, SHat=SHat, method=method, intercept=intercept);
+        sample.true<-T;
+      },error=function(e){
+      },finally={})
+      }
       beta.sd<-sqrt(mean((unlist(lapply(bs.lst, function(x) x[2]))-beta.hat)^2))
     }
   }
-  return(list(caceHat=cace.hat, cace.sdHat= cace.sd, betaHat=beta.hat, beta.sdHat=beta.sd, Maj.pass=Maj.pass))
+  return(list(betaHat=beta.hat, beta.sdHat=beta.sd, caceHat=cace.hat, cace.sdHat= cace.sd, Maj.pass=Maj.pass))
 }
 
 Probit.boot.fun<-function(data, pz,d1=NULL, d2=NULL,w0=NULL, SHat, method=method, intercept=intercept){
@@ -241,9 +259,9 @@ Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
     beta.j = ITT_Y[j] / ITT_D[j]
     pi.j = ITT_Y - ITT_D * beta.j
     #compute three components in eq(33)
-    Sig1.j <- Var.comp.est(Cov.gGam[1:pz,1:pz], ITT_D, j)
-    Sig2.j <- Var.comp.est(Cov.gGam[(pz+1):(2*pz),(pz+1):(2*pz)], ITT_D, j)
-    Sig3.j <-  Var.comp.est(Cov.gGam[1:pz,(pz+1):(2*pz)], ITT_D, j)
+    Sig1.j <- Var.comp.est(as.matrix(Cov.gGam[1:pz,1:pz]), ITT_D, j)
+    Sig2.j <- Var.comp.est(as.matrix(Cov.gGam[(pz+1):(2*pz),(pz+1):(2*pz)]), ITT_D, j)
+    Sig3.j <-  Var.comp.est(as.matrix(Cov.gGam[1:pz,(pz+1):(2*pz)]), ITT_D, j)
     sigmasq.j <- beta.j^2 *Sig1.j +  Sig2.j - 2* beta.j * Sig3.j
     PHat.bool.j <- abs(pi.j) <= sqrt(sigmasq.j) * tuning * sqrt(log(pz)/n)
     VHat.bool.j = PHat.bool.j * SHat.bool
