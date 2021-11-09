@@ -163,7 +163,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
     CI.clique <- matrix(0,nrow = length(max.clique), ncol = 2)
     rule.clique <- matrix(FALSE,nrow = length(max.clique),ncol = 1)
     for (i in 1:length(max.clique)) {
-      V0.hat <- VHat[sort(as.numeric(max.clique[[i]]))]
+      V0.hat <- SHat[sort(as.numeric(max.clique[[i]]))]
       temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-
         2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
       var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
