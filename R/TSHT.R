@@ -139,8 +139,8 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
     beta.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
     betavar.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
     for (i in 1:length(max.clique)) {
-      temp <- sort(as.numeric(max.clique[[i]]))
-      max.clique.mat[i,] <- SHat[temp]
+      temp <- SHat[sort(as.numeric(max.clique[[i]]))]
+      max.clique.mat[i,] <- temp
       AVHat = solve(A[temp,temp])
       betaHat = (t(ITT_Y[temp]) %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])
       SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
