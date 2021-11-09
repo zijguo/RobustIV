@@ -11,6 +11,7 @@ endo.test(
   X,
   intercept = TRUE,
   alpha = 0.05,
+  boot.SHat = FALSE,
   tuning = 2.01,
   method = "DeLasso",
   invalid = TRUE,
@@ -30,6 +31,8 @@ endo.test(
 
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
+
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
 \item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")}
@@ -37,8 +40,6 @@ endo.test(
 \item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)}
 
 \item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
-
-\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
 }
 \value{
 \item{\code{Q}}{numeric value : our endogeneity test statistic.}

@@ -156,6 +156,7 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
   ### screen out strongly invalid IVs and retain a set of valid and weakly invalid IVs ###
   TSHT.Init <- TSHT.VHat(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,boot.SHat = boot.SHat, tuning = tuning,voting=voting)
   VHat = TSHT.Init$VHat;
+  SHat = TSHT.Init$SHat;
   if (voting == 'MaxClique') {
     ### if voting == 'MaxClique', implement the method through all individual maximum cliques ###
     max.clique <- TSHT.Init$max.clique
