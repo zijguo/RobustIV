@@ -153,7 +153,7 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
   }else{###oracle method
     SIR.re <-SIR.est(X.cov=cbind(Z%*%gam.hat,Z[,-V],v.hat), Y, M= M, M.est=M.est)
     M <- ncol(SIR.re$theta.hat)
-    beta.hat<-SIR.re$theta.hat[1,]
+    beta.hat<-matrix(SIR.re$theta.hat[1,],nrow=1,ncol=M)
     pi.hat<-matrix(0,nrow=ncol(Z), ncol=M)
     pi.hat[V,]<-0
     pi.hat[-V,]<-SIR.re$theta.hat[2:(ncol(Z)-length(V)+1),]
