@@ -349,7 +349,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,
     VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     VHat <- sort(as.numeric(VHat))
   } else if (voting == 'MP') {
-    VHat <- as.numeric(union(VM.m,VM.p)) # Union of majority and plurality winners
+    VHat <- sort(as.numeric(union(VM.m,VM.p))) # Union of majority and plurality winners
   } else if (voting == 'Conservative'){
     V.set<-NULL
     for(index in VM.p){
@@ -359,7 +359,7 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,
     for(index in V.set){
       VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
     }
-    VHat=as.numeric(VHat)
+    VHat=sort(as.numeric(VHat))
   }
 
   # Error check
