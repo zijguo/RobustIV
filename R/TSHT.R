@@ -164,9 +164,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
   betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
   if (voting != 'MaxClique') {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat))
+    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat))
   } else {
-    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
+    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
                 beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp), CI.clique = CI.temp,
                 max.clique = max.clique.mat))
   }
