@@ -167,7 +167,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
     return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat))
   } else {
     return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
-                beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp), CI.clique = CI.temp,
+                beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp/n), CI.clique = CI.temp,
                 max.clique = max.clique.mat))
   }
 
