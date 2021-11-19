@@ -197,63 +197,107 @@ Searching.Sampling <- function(Y, D, Z, X, intercept = TRUE, alpha = 0.05, alpha
         rule.clique[i,] <- CI.sampling$rule
       }
     }
-  }
-
-  V0.hat<-TSHT.Init$VHat
-
-  ### construct the initial range [L,U] ###
-
-  temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-
-    2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
-  var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
-  CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
-  CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
-  CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
-  uni<- intervals::Intervals(CI.initial)
-  CI.initial.union<-as.matrix(intervals::interval_union(uni))
-  beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
-
-  ### conduct the initial searching and output a refined range [L,U] ###
-
-  CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
-                       SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
-                       beta.grid=beta.grid.seq,bootstrap=FALSE)
-  CI.temp<-CI.sea$CI.search
-  beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),n^{-0.6})$grid.seq
-
-  ### conduct the refined searching ###
-
-  CI.sea.refined<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
-                               SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
-                               beta.grid,bootstrap=boot.value)
-  CI.search<-CI.sea.refined$CI.search
-  CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
-  ### conduct the refined sampling ###
-  if (Sampling) {
-    CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
-                                       SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
-                                       beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
-    CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
-    if (voting == 'MaxClique') {
-      return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat.init = V0.hat,
-                  CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
-    } else{
-
-      return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat.init = V0.hat))
-    }
-
+    CI.temp <- t(as.matrix(c(min(CI.clique),max(CI.clique))))
+    rule.temp <- as.logical(prod(rule.clique))
+    return(list(CI.union = CI.temp, rule = rule.temp,VHat.init = VHat,
+                CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
   } else {
-    if (voting == 'MaxClique') {
-      return(list(CI.union = CI.temp,CI.matrix = CI.search,
-                  rule = CI.sea.refined$rule,VHat.init = V0.hat,
-                  CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
-    } else{
-      return(list(CI.union = CI.temp,CI.matrix = CI.search,
-                  rule = CI.sea.refined$rule,VHat.init = V0.hat))
+    V0.hat<-TSHT.Init$VHat
 
+    ### construct the initial range [L,U] ###
+
+    temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-
+      2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
+    var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
+    CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
+    CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
+    CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
+    uni<- intervals::Intervals(CI.initial)
+    CI.initial.union<-as.matrix(intervals::interval_union(uni))
+    beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
+
+    ### conduct the initial searching and output a refined range [L,U] ###
+
+    CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                         SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                         beta.grid=beta.grid.seq,bootstrap=FALSE)
+    CI.temp<-CI.sea$CI.search
+    beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),n^{-0.6})$grid.seq
+
+    ### conduct the refined searching ###
+
+    CI.sea.refined<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                                 SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                                 beta.grid,bootstrap=boot.value)
+    CI.search<-CI.sea.refined$CI.search
+    CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
+    rule <-  CI.sea.refined$rule
+    ### conduct the refined sampling ###
+    if (Sampling) {
+      CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+                                         SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+                                         beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
+      CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
+      rule <- CI.sampling$rule
     }
-
+    return(list(CI.union = CI.temp, rule = rule,VHat.init = VHat))
   }
+
+  # V0.hat<-TSHT.Init$VHat
+  #
+  # ### construct the initial range [L,U] ###
+  #
+  # temp<-(SigmaSqY)/(ITT_D[V0.hat]^2)+SigmaSqD*(ITT_Y[V0.hat]^2)/(ITT_D[V0.hat]^4)-
+  #   2*SigmaYD*(ITT_Y[V0.hat])/(ITT_D[V0.hat]^3)
+  # var.beta<-(diag(solve(covW)/n)[1:pz])[V0.hat]*temp
+  # CI.initial<-matrix(NA,nrow=length(V0.hat),ncol=2)
+  # CI.initial[,1]<-(ITT_Y/ITT_D)[V0.hat]-sqrt(log(n)*var.beta)
+  # CI.initial[,2]<-(ITT_Y/ITT_D)[V0.hat]+sqrt(log(n)*var.beta)
+  # uni<- intervals::Intervals(CI.initial)
+  # CI.initial.union<-as.matrix(intervals::interval_union(uni))
+  # beta.grid.seq<-analysis.CI(CI.initial.union,grid.size=n^{-1})$grid.seq
+  #
+  # ### conduct the initial searching and output a refined range [L,U] ###
+  #
+  # CI.sea<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+  #                      SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+  #                      beta.grid=beta.grid.seq,bootstrap=FALSE)
+  # CI.temp<-CI.sea$CI.search
+  # beta.grid<-analysis.CI(as.matrix(CI.sea$CI.search),n^{-0.6})$grid.seq
+  #
+  # ### conduct the refined searching ###
+  #
+  # CI.sea.refined<-Searching.CI(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+  #                              SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+  #                              beta.grid,bootstrap=boot.value)
+  # CI.search<-CI.sea.refined$CI.search
+  # CI.temp <- t(as.matrix(c(min(CI.search),max(CI.search))))
+  # ### conduct the refined sampling ###
+  # if (Sampling) {
+  #   CI.sampling<-Searching.CI.Sampling(ITT_Y = ITT_Y,ITT_D = ITT_D,SigmaSqD=SigmaSqD,SigmaSqY=SigmaSqY,
+  #                                      SigmaYD=SigmaYD,InitiSet = V0.hat,WUMat = WUMat,alpha = alpha,
+  #                                      beta.grid,M=M,bootstrap=boot.value,alpha0=alpha0)
+  #   CI.temp<-t(as.matrix(c(min(CI.sampling$CI.union[,1]),max(CI.sampling$CI.union[,2]))))
+  #   if (voting == 'MaxClique') {
+  #     return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat.init = V0.hat,
+  #                 CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
+  #   } else{
+  #
+  #     return(list(CI.union = CI.temp, rule = CI.sampling$rule,VHat.init = V0.hat))
+  #   }
+  #
+  # } else {
+  #   if (voting == 'MaxClique') {
+  #     return(list(CI.union = CI.temp,CI.matrix = CI.search,
+  #                 rule = CI.sea.refined$rule,VHat.init = V0.hat,
+  #                 CI.clique = CI.clique, rule.clique = rule.clique, max.cliques = max.clique.mat))
+  #   } else{
+  #     return(list(CI.union = CI.temp,CI.matrix = CI.search,
+  #                 rule = CI.sea.refined$rule,VHat.init = V0.hat))
+  #
+  #   }
+  #
+  # }
 
 }
 
