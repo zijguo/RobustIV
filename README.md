@@ -61,7 +61,7 @@ RobustIV::TSHT(Y,D,Z,method="DeLasso",boot.SHat = TRUE)
 Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting](https://doi.org/10.1111/rssb.12275), J. R. Stat. Soc. B, 80: 793-815. 
 
 ## Searching-Sampling method
-We use Searching-Sampling method in low-dimensional setting to resolve post-selection problem.
+We use Searching-Sampling method to resolve post-selection problem.
 ```R
 ### Define covariance matrix ###
 A1gen<-function(rho,p){
