@@ -83,7 +83,6 @@ rho=0.5; Cov<-(A1gen(rho,p))
 L = 10; s1 = 2; s2 = 2; s=s1+s2
 alpha = c(rep(0,L-s1-s2),rep(pi.value,s1),-seq(1,s2)/2); gamma=rep(IV.str,L)
 
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
 W<-MASS::mvrnorm(n, rep(0, p), Cov)
 Z=W[,1:L]
 X=W[,(L+1):p]
