@@ -244,10 +244,10 @@ Especially, we can use the method for probit model assumption.
    Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
 
 ### Implement SpotIV method when we assume probit model with valid IV assumption ###
-RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='valid', intercept=TRUE)
+RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='valid', intercept=TRUE)
 
 ### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
-RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = c(z0,x0), method='majority', intercept=TRUE)
+RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='majority', intercept=TRUE)
 
 ```
 
