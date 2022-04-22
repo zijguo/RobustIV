@@ -13,6 +13,9 @@
 #' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
 #'
 #' @return
+#'
+#'     \code{TSHT} returns an object of class "TSHT".
+#'     An object class "TSHT" is a list containing the following components
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
 #'     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
 #'     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
@@ -77,7 +80,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
   D = as.numeric(D)
 
   # Check Z
-  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z) || is.data.frame(Z)))
   stopifnot(all(!is.na(Z)))
   if (is.vector(Z)) {
     Z <- cbind(Z)
@@ -87,7 +90,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
 
   # Check X, if present
   if(!missing(X)) {
-    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
+    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||((is.matrix(X) || is.data.frame(X))&& nrow(X) == nrow(Z)))
     stopifnot(all(!is.na(X)))
     if (is.vector(X)) {
       X <- cbind(X)
@@ -164,12 +167,15 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
   betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
   if (voting != 'MaxClique') {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat))
+    TSHT.model <- list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat)
   } else {
-    return(list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
+    TSHT.model <- list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
                 beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp/n), CI.clique = CI.temp,
-                max.clique = max.clique.mat))
+                max.clique = max.clique.mat)
   }
+
+  structure(TSHT.model, class = "TSHT")
+  return(TSHT.model)
 
 }
 
