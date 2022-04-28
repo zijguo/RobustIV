@@ -1,83 +1,3 @@
-library(intervals)
-library(MASS)
-
-###### Main Function ###########
-SearchingSampling <- function(Y, D, Z, X, intercept=TRUE, 
-                              noise.mode=c("hetero","homo"),
-                              CI.init = NULL,
-                              a=0.6,
-                              Sampling=TRUE, 
-                              rho=NULL, M=1000, prop=0.1){
-  noise.mode = match.arg(noise.mode)
-  
-  if(is.null(X)) W = Z else W = cbind(Z, X)
-  n = length(Y); pz = ncol(Z); p = ncol(W)
-  
-  ## Preparation
-  if(intercept) W = cbind(W, 1)
-  covW = t(W)%*%W/n
-  U = solve(covW) # precision matrix
-  WUMat = (W%*%U)[,1:pz]
-  
-  ## OLS estimators
-  qrW = qr(W)
-  ITT_Y = qr.coef(qrW, Y)[1:pz]
-  ITT_D = qr.coef(qrW, D)[1:pz]
-  resid_Y = as.vector(qr.resid(qrW, Y))
-  resid_D = as.vector(qr.resid(qrW, D))
-  
-  ## Computing (co)variance matrices
-  if(noise.mode=="homo"){
-    SigmaSqY = sum(resid_Y^2)/(n-1)
-    SigmaSqD = sum(resid_D^2)/(n-1)
-    SigmaYD = sum(resid_Y * resid_D)/(n-1)
-    V.Gamma = SigmaSqY * U[1:pz, 1:pz]
-    V.gamma = SigmaSqD * U[1:pz, 1:pz]
-    C = SigmaYD * U[1:pz, 1:pz]
-  }else{
-    V.Gamma = (t(WUMat)%*%diag(resid_Y^2)%*%WUMat)/n
-    V.gamma = (t(WUMat)%*%diag(resid_D^2)%*%WUMat)/n
-    C = (t(WUMat)%*%diag(resid_Y * resid_D)%*%WUMat)/n
-  }
-  
-  TSHT.out <- TSHT.Init(ITT_Y, ITT_D, resid_Y, resid_D, WUMat, V.gamma, noise.mode=noise.mode)
-  V0.hat = sort(TSHT.out$VHat)
-  ## Construct range [L, U]
-  if(is.vector(CI.init)){
-    CI.init.union = t(as.matrix(sort(CI.init)))
-  }else{
-    ## current method to select initial [L, U]
-    var.beta = 1/n * (diag(V.Gamma)/ITT_D^2 + diag(V.gamma)*ITT_Y^2/ITT_D^4 - 2*diag(C)*ITT_Y/ITT_D^3)
-    var.beta = var.beta[V0.hat]
-    CI.init = matrix(NA, nrow=length(V0.hat), ncol=2)
-    CI.init[,1] = (ITT_Y/ITT_D)[V0.hat] - sqrt(log(n)*var.beta)
-    CI.init[,2] = (ITT_Y/ITT_D)[V0.hat] + sqrt(log(n)*var.beta)
-    uni = Intervals(CI.init)
-    CI.init.union = as.matrix(interval_union(uni))
-  }
-  
-  # Construct beta.grid
-  beta.grid = grid.CI(CI.init.union, grid.size=n^{-a})
-  
-  if(Sampling){
-    ## Sampling Method
-    CI.sampling = Searching.CI.sampling(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet=V0.hat,
-                                        beta.grid = beta.grid, rho=rho, M=M, prop=prop, filtering=TRUE)
-    CI=CI.sampling$CI
-    rule=CI.sampling$rule
-  }else{
-    ## Searching Method
-    CI.searching = Searching.CI(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet = V0.hat,
-                                beta.grid = beta.grid)
-    CI=CI.searching$CI
-    rule=CI.searching$rule
-  }
-  returnList <- list(CI=CI, rule=rule, VHat=V0.hat, CI.init=CI.init.union, TSHT.out = TSHT.out)
-  
-  return(returnList)
-}
-
-############ Helpers ########################
 grid.CI <- function(CI.matrix, grid.size){
   d = dim(CI.matrix)[1]
   grid.seq = NULL
@@ -126,7 +46,7 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
   
   ## Covariance Matrix
   Cov1 = cbind(V.Gamma/n, C/n)
-  Cov2 = cbind(C/n, V.gamma/n)
+  Cov2 = cbind(t(C/n), V.gamma/n)
   Cov.total = rbind(Cov1, Cov2)
   
   valid.grid.sample = matrix(NA, nrow=M, ncol=n.beta)
@@ -181,17 +101,9 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
   return(list(CI=CI, rule=rule))
 }
 
-TSHT.Init <- function(ITT_Y, ITT_D, resid_Y, resid_D, WUMat, V.gamma, noise.mode="hetero"){
-  n = nrow(WUMat); pz = ncol(WUMat)
-  
-  if(noise.mode=="homo"){
-    ## compute Sigmas
-    SigmaSqY = sum(resid_Y^2)/(n-1)
-    SigmaSqD = sum(resid_D^2)/(n-1)
-    SigmaYD = sum(resid_Y * resid_D)/(n-1)
-  }
-  
-  ## First stage
+TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
+  pz = nrow(V.Gamma)
+  ## First Stage
   Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
   SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
   if(length(SHat)==0){
@@ -203,7 +115,7 @@ TSHT.Init <- function(ITT_Y, ITT_D, resid_Y, resid_D, WUMat, V.gamma, noise.mode
   }
   SHat.bool = rep(FALSE, pz); SHat.bool[SHat] = TRUE
   
-  ## Second stage
+  ## Second Stage
   nCand = length(SHat)
   VHats.bool = matrix(FALSE, nCand, nCand)
   colnames(VHats.bool) = rownames(VHats.bool) = SHat
@@ -211,19 +123,15 @@ TSHT.Init <- function(ITT_Y, ITT_D, resid_Y, resid_D, WUMat, V.gamma, noise.mode
   for(j in SHat){
     beta.j = ITT_Y[j]/ITT_D[j]
     pi.j = ITT_Y - ITT_D * beta.j
-    if(noise.mode=="homo"){
-      sigmasq.j = SigmaSqY + beta.j^2 * SigmaSqD - 2* beta.j * SigmaYD
-      PHat.bool.j = abs(pi.j) <= sqrt(sigmasq.j * colSums((WUMat - outer(WUMat[,j]/ITT_D[j], ITT_D))^2)/n) * 
-        sqrt(tuning^2 * log(pz)/n)  ### tuning
-    }else if(noise.mode=="hetero"){
-      mid.j = resid_Y - beta.j*resid_D
-      side.j = WUMat - outer(WUMat[, j]/ITT_D[j], ITT_D)
-      #PHat.bool.j = (abs(pi.j) <= sqrt(colSums((mid.j * side.j)^2)/n^2) * sqrt(tuning^2 * log(pz)/n)) ########### instead of log(n) in paper
-      #PHat.bool.j = abs(pi.j) <= sqrt(colSums((mid.j * side.j)^2)/n^2) * sqrt(tuning^2 * log(pz))   ##### not log(n)
-      PHat.bool.j = abs(pi.j) <= sqrt(colSums((mid.j * side.j)^2)/n^2) * sqrt(log(n))
+    Temp = V.Gamma + beta.j^2*V.gamma - 2*beta.j*C
+    SE.j = rep(NA, pz)
+    for(k in 1:pz){
+      SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] - 
+                         2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
+    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
     VHat.bool.j = PHat.bool.j * SHat.bool
-    VHats.bool[as.character(SHat),as.character(j)] = VHat.bool.j[SHat]
+    VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
   }
   VHats.boot.sym<-VHats.bool
   for(i in 1:dim(VHats.boot.sym)[1]){
@@ -273,17 +181,3 @@ Lasso.init <- function(X, y, lambda = "CV.min", intercept = FALSE) {
   }
 }
 
-tryCatch_E <- function(expr, ret.obj){
-  # error handler
-  errhandler <- function(e) {
-    err <<- conditionMessage(e)
-    ret.obj # Return argument ret.obj if an error occcurs.
-  }
-  
-  # evaluate the expression
-  err <- NULL
-  value <- withCallingHandlers(tryCatch(expr, error = errhandler))
-  
-  # return a list with value, error and warning
-  list(value = value, error = err)
-}
