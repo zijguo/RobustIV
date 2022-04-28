@@ -1,11 +1,10 @@
 ##################################
-### Date: 4/25/2022
+### Date: 4/28/2022
 ### Author: Zhenyu WANG
 
 library(SIHR)
 library(MASS)
 library(intervals)
-source("helpers.R")
 
 ############# Main Function #############
 SearchingSampling <- function(Y, D, Z, X, intercept=TRUE, 
