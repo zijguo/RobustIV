@@ -7,7 +7,7 @@ library(MASS)
 library(intervals)
 
 ############# Main Function #############
-SearchingSampling <- function(Y, D, Z, X, intercept=TRUE, 
+SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE, 
                               lowd=TRUE, 
                               robust=TRUE,
                               CI.init = NULL,
