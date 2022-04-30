@@ -22,6 +22,7 @@
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
 #'     \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
+#'     \item{\code{check}}{True or False indicating whether the majority rule test is passed or not.}
 #'     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
 #'     \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
 #'     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
@@ -80,7 +81,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
   D = as.numeric(D)
 
   # Check Z
-  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z) || is.data.frame(Z)))
+  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
   stopifnot(all(!is.na(Z)))
   if (is.vector(Z)) {
     Z <- cbind(Z)
@@ -90,7 +91,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
 
   # Check X, if present
   if(!missing(X)) {
-    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||((is.matrix(X) || is.data.frame(X))&& nrow(X) == nrow(Z)))
+    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
     stopifnot(all(!is.na(X)))
     if (is.vector(X)) {
       X <- cbind(X)
@@ -133,7 +134,11 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
                       SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,SigmaYD=SigmaYD,
                       covW=covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
   VHat = SetHats$VHat; SHat = SetHats$SHat
-
+  check = T
+  if(length(VHat)< length(SHat)/2){
+    cat('Majority rule fails.','\n')
+    check=F
+  }
 
   if (voting == 'MaxClique') {
     max.clique <- SetHats$max.clique
@@ -167,9 +172,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.
   betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
   if (voting != 'MaxClique') {
     ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    TSHT.model <- list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat)
+    TSHT.model <- list(call = match.call(), betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,check = check)
   } else {
-    TSHT.model <- list(betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,
+    TSHT.model <- list(call = match.call(), betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat, check = check
                 beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp/n), CI.clique = CI.temp,
                 max.clique = max.clique.mat)
   }
