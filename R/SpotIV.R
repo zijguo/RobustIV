@@ -4,14 +4,14 @@
 #' @param D continuous and non-missing, n by 1 numeric treatment vector.
 #' @param Z continuous or discrete, non-missing, n by pz numeric instrument matrix, containing pz instruments.
 #' @param X continuous or discrete, n by px numeric baseline covariates.
-#' @param M an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 3.
+#' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
+#' @param M an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 2.
 #' @param M.est True or False, whether estimate M based on BIC. Default is True.
-#' @param V the set of valid IVs for implementing the oracle control function method
+#' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE).
 #' @param intercept a boolean scalar indicating to include the intercept or not. Default is TRUE.
 #' @param d1 a scalar for computing CATE(d1,d2|w0).
 #' @param d2 a scalar for computing CATE(d1,d2|w0).
 #' @param w0  a (pz+px) by 1 vector for computing CATE(d1,d2|w0).
-#' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
 #' @param bw  a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
 #' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.
 
@@ -188,9 +188,10 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
     }
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }
-
-  return(list(betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd,
-              SHat=SHat, VHat = VHat, Maj.pass=Maj.pass))
+  SpotIV.model <- list(betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd,
+                       SHat=SHat, VHat = VHat, Maj.pass=Maj.pass)
+  structure(SpotIV.model, out = "SpotIV")
+  return(SpotIV.model)
 }
 
 SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){

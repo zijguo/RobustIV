@@ -133,9 +133,10 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tunin
   } else {
     cat("'H0 : Sigma12 = 0' is not rejected","\n")
   }
+  endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set)
+  structure(endo.test.model, class = "endo.test")
+  return(endo.test.model)
 
-
-  return(list(Q=Q,Sigma12=Sigma12,VHat=Set))
 }
 
 #' @title Relevant Instrumental Variable Selection for endogeneity test

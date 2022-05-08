@@ -44,7 +44,9 @@ cf <- function(outcome.formula,treatment.formula){
   cf.vcov <- vcov(cf.fit)
   cf.vcov <- cf.vcov[-which(rownames(cf.vcov)=="e1"),-which(colnames(cf.vcov)=="e1")]
 
-  return(list(coefficients = cf.coef, vcov = cf.vcov))
+  cf.model <- list(coefficients = cf.coef, vcov = cf.vcov)
+  structure(cf.model,class = 'cf')
+  return(cf.model)
 }
 
 
@@ -119,6 +121,7 @@ pretest <- function(outcome.formula,treatment.formula){
     Hausman.stat = diff,
     p.value = prob.larger.than.diff
   )
+  structure(pretest.val,class = 'pretest')
   return(pretest.val)
 }
 
@@ -158,6 +161,8 @@ tsls <- function(outcome.formula,treatment.formula){
   iv.coef <- coef(tsls.model)
   iv.vcov <- vcov(tsls.model)
 
+  tsls.model <- list(coefficients = iv.coef, vcov = iv.vcov)
+  structure(tsls.model,class = 'cf')
+  return(tsls.model)
 
-  return(list(coefficients = iv.coef, vcov = iv.vcov))
 }

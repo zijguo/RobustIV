@@ -17,6 +17,8 @@
 #'     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+#'     \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 #'
 #' @importFrom stats binomial glm median pnorm sd
@@ -119,6 +121,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
     #applying the majority rule
     Select.re<-Majority.test(n=n,ITT_Y=Gam.hat[1:pz], ITT_D=gam.hat[1:pz], Cov.gGam=Cov.gGam)
     SHat<-Select.re$SHat
+    VHat <- Select.re$VHat
     if(length(Select.re$VHat)<= length(SHat)/2){
       cat('Majority rule fails.','\n')
       Maj.pass=F
@@ -145,6 +148,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
       pi.hat<-c(rep(0,pz),coef.re[2:(1+ncol(X))])
       kappa.hat<-coef.re[length(coef.re)]
     }
+    VHat = SHat
   }
 
   cace.hat<-NA; cace.sd<-NA
@@ -184,7 +188,9 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
       beta.sd<-sqrt(mean((unlist(lapply(bs.lst, function(x) x[2]))-beta.hat)^2))
     }
   }
-  return(list(betaHat=beta.hat, beta.sdHat=beta.sd, caceHat=cace.hat, cace.sdHat= cace.sd, Maj.pass=Maj.pass))
+  Probit.model <- list(betaHat=beta.hat, beta.sdHat=beta.sd, caceHat=cace.hat, cace.sdHat= cace.sd, SHat=SHat, VHat = VHat, Maj.pass=Maj.pass)
+  structure(Probit.model, out = "SpotIV")
+  return(Probit.model)
 }
 
 Probit.boot.fun<-function(data, pz,d1=NULL, d2=NULL,w0=NULL, SHat, method=method, intercept=intercept){
