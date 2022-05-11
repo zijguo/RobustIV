@@ -7,10 +7,11 @@
 #' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
 #' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
-#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE. (Not working when robust = TRUE)
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".
 #' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
+#' @param robust a boolean scalar indicating to assume heteroskedasticity errors, with default TRUE. If robust = TRUE, only 'OLS' method can be used.
 #'
 #' @return
 #'
@@ -63,122 +64,127 @@
 #' }
 #'
 #'
-TSHT <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, boot.SHat = FALSE ,tuning=2.01,
-                 method="OLS", voting = 'MaxClique') {
-  stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
-  stopifnot(all(!is.na(Y)))
-  if (is.vector(Y)) {
-    Y <- cbind(Y)
-  }
-  Y = as.numeric(Y)
-
-  # Check D
-  stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(D)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
-  stopifnot(all(!is.na(D)))
-  if (is.vector(D)) {
-    D <- cbind(D)
-  }
-  D = as.numeric(D)
-
-  # Check Z
-  stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
-  stopifnot(all(!is.na(Z)))
-  if (is.vector(Z)) {
-    Z <- cbind(Z)
-  }
-  # Check dimesions
-  stopifnot(nrow(Y) == nrow(D), nrow(Y) == nrow(Z))
-
-  # Check X, if present
-  if(!missing(X)) {
-    stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
-    stopifnot(all(!is.na(X)))
-    if (is.vector(X)) {
-      X <- cbind(X)
+TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05, boot.SHat = FALSE ,tuning=2.01,
+                 method="OLS", voting = 'MaxClique', robust = FALSE) {
+  stopifnot(is.logical(robust))
+  if (robust == TRUE) {
+    TSHT.model <- TSHT_hetero(Y = Y,D = D,Z = Z,X = X,intercept = intercept, alpha = alpha,
+                               tuning = tuning, method = method, voting = voting)
+  } else{
+    stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
+    stopifnot(all(!is.na(Y)))
+    if (is.vector(Y)) {
+      Y <- cbind(Y)
     }
-    W = cbind(Z,X)
-  } else {
-    W = Z
-  }
+    Y = as.numeric(Y)
 
-  # All the other argument
-  stopifnot(is.logical(intercept))
-  stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
-  stopifnot(is.logical(boot.SHat))
-  stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
-  stopifnot(method=='OLS' | method=='DeLasso')
-  stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
+    # Check D
+    stopifnot(!missing(D),(is.numeric(D) || is.logical(D)),is.vector(D)||(is.matrix(D) || is.data.frame(D)) && ncol(D) == 1)
+    stopifnot(all(!is.na(D)))
+    if (is.vector(D)) {
+      D <- cbind(D)
+    }
+    D = as.numeric(D)
+
+    # Check Z
+    stopifnot(!missing(Z),(is.numeric(Z) || is.logical(Z)),(is.vector(Z) || is.matrix(Z)))
+    stopifnot(all(!is.na(Z)))
+    if (is.vector(Z)) {
+      Z <- cbind(Z)
+    }
+    # Check dimesions
+    stopifnot(nrow(Y) == nrow(D), nrow(Y) == nrow(Z))
+
+    # Check X, if present
+    if(!missing(X)) {
+      stopifnot((is.numeric(X) || is.logical(X)),(is.vector(X))||(is.matrix(X) && nrow(X) == nrow(Z)))
+      stopifnot(all(!is.na(X)))
+      if (is.vector(X)) {
+        X <- cbind(X)
+      }
+      W = cbind(Z,X)
+    } else {
+      W = Z
+    }
+
+    # All the other argument
+    stopifnot(is.logical(intercept))
+    stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
+    stopifnot(is.logical(boot.SHat))
+    stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
+    stopifnot(method=='OLS' | method=='DeLasso')
+    stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
 
 
-  # Derive Inputs for TSHT
-  n = length(Y); pz=ncol(Z)
-  if(method == "OLS") {
-    inputs = TSHT.OLS(Y,D,W,pz,intercept)
-    A = t(inputs$WUMat) %*% inputs$WUMat / n
-  } else if (method == "DeLasso") {
-    inputs = TSHT.DeLasso(Y,D,W,pz,intercept)
-    A = diag(pz)
-  }
+    # Derive Inputs for TSHT
+    n = length(Y); pz=ncol(Z)
+    if(method == "OLS") {
+      inputs = TSHT.OLS(Y,D,W,pz,intercept)
+      A = t(inputs$WUMat) %*% inputs$WUMat / n
+    } else if (method == "DeLasso") {
+      inputs = TSHT.DeLasso(Y,D,W,pz,intercept)
+      A = diag(pz)
+    }
 
-  # Reduced form estimator
-  ITT_Y = inputs$ITT_Y;
-  ITT_D = inputs$ITT_D;
-  WUMat = inputs$WUMat;
-  SigmaSqD = inputs$SigmaSqD;
-  SigmaSqY = inputs$SigmaSqY;
-  SigmaYD=inputs$SigmaYD;
-  covW=inputs$covW
+    # Reduced form estimator
+    ITT_Y = inputs$ITT_Y;
+    ITT_D = inputs$ITT_D;
+    WUMat = inputs$WUMat;
+    SigmaSqD = inputs$SigmaSqD;
+    SigmaSqY = inputs$SigmaSqY;
+    SigmaYD=inputs$SigmaYD;
+    covW=inputs$covW
 
-  # Estimate Valid IVs
-  SetHats = TSHT.VHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
-                      SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,SigmaYD=SigmaYD,
-                      covW=covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
-  VHat = SetHats$VHat; SHat = SetHats$SHat
-  check = T
-  if(length(VHat)< length(SHat)/2){
-    cat('Majority rule fails.','\n')
-    check=F
-  }
+    # Estimate Valid IVs
+    SetHats = TSHT.VHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
+                        SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,SigmaYD=SigmaYD,
+                        covW=covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
+    VHat = SetHats$VHat; SHat = SetHats$SHat
+    check = T
+    if(length(VHat)< length(SHat)/2){
+      cat('Majority rule fails.','\n')
+      check=F
+    }
 
-  if (voting == 'MaxClique') {
-    max.clique <- SetHats$max.clique
-    max.clique.mat <- matrix(0,nrow = length(max.clique),ncol = length(max.clique[[1]]))
-    CI.temp <- matrix(0,nrow = length(max.clique), ncol = 2)
-    beta.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
-    betavar.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
-    for (i in 1:length(max.clique)) {
-      temp <- SHat[sort(as.numeric(max.clique[[i]]))]
-      max.clique.mat[i,] <- temp
-      AVHat = solve(A[temp,temp])
-      betaHat = (t(ITT_Y[temp]) %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])
-      SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
-      betaVarHat = SigmaSq * (t(ITT_D[temp]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[temp,temp] %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])^2
+    if (voting == 'MaxClique') {
+      max.clique <- SetHats$max.clique
+      max.clique.mat <- matrix(0,nrow = length(max.clique),ncol = length(max.clique[[1]]))
+      CI.temp <- matrix(0,nrow = length(max.clique), ncol = 2)
+      beta.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
+      betavar.temp <- matrix(0,nrow = length(max.clique), ncol = 1)
+      for (i in 1:length(max.clique)) {
+        temp <- SHat[sort(as.numeric(max.clique[[i]]))]
+        max.clique.mat[i,] <- temp
+        AVHat = solve(A[temp,temp])
+        betaHat = (t(ITT_Y[temp]) %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])
+        SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
+        betaVarHat = SigmaSq * (t(ITT_D[temp]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[temp,temp] %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])^2
+        ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
+        CI.temp[i,] <- ci
+        beta.temp[i,] <- betaHat
+        betavar.temp[i,] <- betaVarHat
+      }
+      uni<- intervals::Intervals(CI.temp)
+      ###### construct the confidence interval by taking a union
+      CI.union<-as.matrix(intervals::interval_union(uni))
+      # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
+      # ci <- as.vector(CI.union)
+    }
+
+    # Obtain point est, se, and ci
+    AVHat = solve(A[VHat,VHat])
+    betaHat = (t(ITT_Y[VHat]) %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])
+    SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
+    betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
+    if (voting != 'MaxClique') {
       ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-      CI.temp[i,] <- ci
-      beta.temp[i,] <- betaHat
-      betavar.temp[i,] <- betaVarHat
-    }
-    uni<- intervals::Intervals(CI.temp)
-    ###### construct the confidence interval by taking a union
-    CI.union<-as.matrix(intervals::interval_union(uni))
-    # CI.union <- t(as.matrix(c(min(CI.union),max(CI.union)))) # added
-    # ci <- as.vector(CI.union)
+      TSHT.model <- list( betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,check = check)
+    } else {
+      TSHT.model <- list( betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat, check = check,
+                  beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp/n), CI.clique = CI.temp,
+                  max.clique = max.clique.mat)
+      }
   }
-
-  # Obtain point est, se, and ci
-  AVHat = solve(A[VHat,VHat])
-  betaHat = (t(ITT_Y[VHat]) %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])
-  SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
-  betaVarHat = SigmaSq * (t(ITT_D[VHat]) %*% AVHat %*% (t(WUMat) %*% WUMat/ n)[VHat,VHat] %*% AVHat %*% ITT_D[VHat]) / (t(ITT_D[VHat]) %*% AVHat %*% ITT_D[VHat])^2
-  if (voting != 'MaxClique') {
-    ci = c(betaHat - qnorm(1-alpha/2) * sqrt(betaVarHat / n),betaHat + qnorm(1-alpha/2) * sqrt(betaVarHat/n))
-    TSHT.model <- list( betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=ci,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat,check = check)
-  } else {
-    TSHT.model <- list( betaHat=betaHat,beta.sdHat = sqrt(betaVarHat/n),ci=CI.union,SHat=SHat,VHat = VHat,voting.mat=SetHats$voting.mat, check = check,
-                beta.clique = beta.temp,beta.sd.clique = sqrt(betavar.temp/n), CI.clique = CI.temp,
-                max.clique = max.clique.mat)
-  }
-
   structure(TSHT.model, class = "TSHT")
   return(TSHT.model)
 
