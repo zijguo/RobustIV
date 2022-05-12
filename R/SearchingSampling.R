@@ -83,15 +83,7 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               a=0.6,
                               Sampling=TRUE, 
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
-  ###############################################
-  ## Arguments:
-  ## lowd      If TRUE, use OLS method; else use SIHR LF method.
-  ## robust    If TRUE, fit model for heteroscedastic model; else homoscedastic 
-  ## CI.init   initial range [L, U], if not specified we provided a default method to construct
-  ## a         the grid size is set as n^{-a}
-  ## Sampling  If TRUE, use sampling approach; else use searching approach.
-  ## rho       For sampling method, the initial rho (corresponding to lambda in paper)
-  ## M         For sampling method, sampling times
+
   if(is.null(X)) W = Z else W = cbind(Z, X)
   n = length(Y); pz = ncol(Z); p = ncol(W)
   
