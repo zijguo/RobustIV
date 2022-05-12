@@ -2,9 +2,6 @@
 ### Date: 4/28/2022
 ### Author: Zhenyu WANG
 
-library(SIHR)
-library(MASS)
-library(intervals)
 
 ############# Main Function #############
 #' SearchingSampling
@@ -33,6 +30,52 @@ library(intervals)
 #' @export
 #' @import intervals MASS SIHR
 #' @examples
+#'########### Example: for lowd setting ########### 
+#'library(intervals);libary(MASS);library(SIHR)
+#'case = "homo" # "homo" or "hetero"
+#'set.seed(0)
+#'n = 500
+#'VIO.str = 0.2
+#'IV.str = 0.5
+#'pi.value = IV.str*VIO.str
+#'beta = 1
+#'L = 10; px=10
+#'s1 = 2; s2 = 4; s=s1+s2
+#'alpha = c(rep(0,L-s),rep(pi.value,s1),-seq(1,s2)/3)
+#'gamma=rep(IV.str,L)
+#'p=L+px # p stands for the number of total exogeneous variables 
+#'phi<-rep(0,px)
+#'psi<-rep(0,px)
+#'phi[1:px]<-(1/px)*seq(1,px)+0.5
+#'psi[1:px]<-(1/px)*seq(1,px)+1
+#'rho=0.5
+#'A1gen <- function(rho, p){
+#'  A1 = matrix(0, nrow=p, ncol=p)
+#'  for(i in 1:p) for(j in 1:p) A1[i, j] = rho^(abs(i-j))
+#'  return(A1)
+#'}
+#'Cov<-(A1gen(rho,p))
+#'W = mvrnorm(n, rep(0, p), Cov)
+#'Z = W[, 1:L]
+#'X = W[, (L+1):p]
+#'if(case=="hetero"){
+#'  epsilon1 = rnorm(n)
+#'  tao1 = rep(NA, n); for(i.n in 1:n) tao1[i.n] = rnorm(n=1, mean=0, sd=0.25+0.5*(Z[i.n, 1])^2)
+#'  tao2 = rnorm(n)
+#'  epsilon2 = 0.3*epsilon1 + sqrt((1-0.3^2)/(0.86^4+1.38072^2))*(1.38072*tao1+0.86^2*tao2)
+#'}else if(case=="homo"){
+#'  epsilonSigma = matrix(c(1, 0.8, 0.8, 1), 2, 2)
+#'  epsilon = mvrnorm(n, rep(0, 2), epsilonSigma)
+#'  epsilon1 = epsilon[,1]
+#'  epsilon2 = epsilon[,2]
+#'}
+#'D = 0.5 + Z %*% gamma+ X%*% psi + epsilon1
+#'Y = -0.5 + Z %*% alpha + D * beta + X%*%phi+ epsilon2
+#'
+#'out1 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = FALSE)
+#'out2 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = TRUE)
+#'out1$CI; out2$CI
+
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE, 
                               lowd=TRUE, 
                               robust=TRUE,
@@ -153,50 +196,6 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 }
 
 
-########### Example: for lowd setting ########### 
-case = "homo" # "homo" or "hetero"
-set.seed(0)
-n = 500
-VIO.str = 0.2
-IV.str = 0.5
-pi.value = IV.str*VIO.str
-beta = 1
-L = 10; px=10
-s1 = 2; s2 = 4; s=s1+s2
-alpha = c(rep(0,L-s),rep(pi.value,s1),-seq(1,s2)/3)
-gamma=rep(IV.str,L)
-p=L+px # p stands for the number of total exogeneous variables 
-phi<-rep(0,px)
-psi<-rep(0,px)
-phi[1:px]<-(1/px)*seq(1,px)+0.5
-psi[1:px]<-(1/px)*seq(1,px)+1
-rho=0.5
-A1gen <- function(rho, p){
-  A1 = matrix(0, nrow=p, ncol=p)
-  for(i in 1:p) for(j in 1:p) A1[i, j] = rho^(abs(i-j))
-  return(A1)
-}
-Cov<-(A1gen(rho,p))
-W = mvrnorm(n, rep(0, p), Cov)
-Z = W[, 1:L]
-X = W[, (L+1):p]
-if(case=="hetero"){
-  epsilon1 = rnorm(n)
-  tao1 = rep(NA, n); for(i.n in 1:n) tao1[i.n] = rnorm(n=1, mean=0, sd=0.25+0.5*(Z[i.n, 1])^2)
-  tao2 = rnorm(n)
-  epsilon2 = 0.3*epsilon1 + sqrt((1-0.3^2)/(0.86^4+1.38072^2))*(1.38072*tao1+0.86^2*tao2)
-}else if(case=="homo"){
-  epsilonSigma = matrix(c(1, 0.8, 0.8, 1), 2, 2)
-  epsilon = mvrnorm(n, rep(0, 2), epsilonSigma)
-  epsilon1 = epsilon[,1]
-  epsilon2 = epsilon[,2]
-}
-D = 0.5 + Z %*% gamma+ X%*% psi + epsilon1
-Y = -0.5 + Z %*% alpha + D * beta + X%*%phi+ epsilon2
-
-out1 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = FALSE)
-out2 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = TRUE)
-out1$CI; out2$CI
 
 ########### Helpers function #############
 grid.CI <- function(CI.matrix, grid.size){
