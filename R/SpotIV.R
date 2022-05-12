@@ -189,7 +189,7 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }
   SpotIV.model <- list(betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd,
-                       SHat=SHat, VHat = VHat, Maj.pass=Maj.pass)
+                       SHat=SHat, VHat = as.numeric(VHat), Maj.pass=Maj.pass)
   structure(SpotIV.model, out = "SpotIV")
   return(SpotIV.model)
 }
