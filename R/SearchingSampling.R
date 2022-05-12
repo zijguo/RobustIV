@@ -7,6 +7,32 @@ library(MASS)
 library(intervals)
 
 ############# Main Function #############
+#' SearchingSampling
+#' @description The proposed searching/sampling method
+#'
+#' @param Y outcome vector
+#' @param D treatment vector
+#' @param Z instruments
+#' @param X covariates (default=\code{NULL})
+#' @param intercept fit model with intercept or not (default=\code{TRUE})
+#' @param lowd if \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})
+#' @param robust if \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
+#' @param CI.init initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
+#' @param a grid size for constructing beta grids (default=0.6)
+#' @param Sampling if \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
+#' @param rho initial value constructed for sampling method (default=\code{NULL})
+#' @param M sampling times. (default=1000)
+#' @param prop proportion of intervals kept when sampling. (default=0.1)
+#' @param filtering filtering sampling or not (default=\code{TRUE})
+#'
+#' @return
+#' \item{CI}{confidence interval for beta}
+#' \item{check}{the plurality rule being checked TRUE or FALSE emprically}
+#' \item{VHat}{valid instruments}
+#' \item{SHat}{relevant instruments}
+#' @export
+#' @import intervals MASS SIHR
+#' @examples
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE, 
                               lowd=TRUE, 
                               robust=TRUE,
@@ -229,9 +255,11 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
   if(is.null(rho)) rho = (log(n)/M)^(1/(2*length(InitiSet)))/6 # initial rho if not specified
   
   if(filtering){
-    temp = abs(t(t(Gen.mat[,(pz+1):(2*pz)]) / sqrt(diag(V.gamma)/n)))
+    temp1 = abs(t(t(Gen.mat[,InitiSet])/sqrt(diag(V.Gamma)[InitiSet]/n)))
+    temp2 = abs(t(t(Gen.mat[,pz+InitiSet])/sqrt(diag(V.gamma)[InitiSet]/n)))
+    temp = cbind(temp1, temp2)
     temp = apply(temp, MARGIN=1, FUN=max)
-    temp = (temp <= qnorm(1-0.05/(2*pz)))
+    temp = temp <= qnorm(1-0.05/(4*length(InitiSet)))
     Gen.mat = Gen.mat[temp,]
     M = sum(temp)
   }
