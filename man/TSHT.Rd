@@ -14,7 +14,8 @@ TSHT(
   boot.SHat = FALSE,
   tuning = 2.01,
   method = "OLS",
-  voting = "MaxClique"
+  voting = "MaxClique",
+  robust = FALSE
 )
 }
 \arguments{
@@ -26,25 +27,30 @@ TSHT(
 
 \item{X}{optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.}
 
-\item{intercept}{a boolean scalar indicating to include the intercept or not, with default TRUE.}
+\item{intercept}{a boolean scalar indicating to include the intercept or not, with default \code{TRUE}.}
 
 \item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
 
-\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
+\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default \code{FALSE}. (Not working when robust = \code{TRUE})}
 
 \item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
 
 \item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".}
 
 \item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
+
+\item{robust}{a boolean scalar indicating to assume heteroskedasticity errors, with default TRUE. If robust = TRUE, only 'OLS' method can be used.}
 }
 \value{
-\item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
+\code{TSHT} returns an object of class "TSHT".
+    An object class "TSHT" is a list containing the following components
+    \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
     \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
     \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
     \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
+    \item{\code{check}}{True or False indicating whether the majority rule test is passed or not.}
     \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
     \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
     \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}

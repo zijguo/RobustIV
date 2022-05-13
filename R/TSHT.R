@@ -5,9 +5,9 @@
 #' @param D continuous or discrete, non-missing, n by 1 numeric treatment vector.
 #' @param Z continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments..
 #' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
-#' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
+#' @param intercept a boolean scalar indicating to include the intercept or not, with default \code{TRUE}.
 #' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
-#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE. (Not working when robust = TRUE)
+#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default \code{FALSE}. (Not working when robust = \code{TRUE})
 #' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
 #' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".
 #' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
@@ -114,7 +114,6 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05, boot.SHat = FALSE ,tuning=2
     stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
     stopifnot(method=='OLS' | method=='DeLasso')
     stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
-
 
     # Derive Inputs for TSHT
     n = length(Y); pz=ncol(Z)

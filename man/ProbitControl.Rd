@@ -43,6 +43,8 @@ ProbitControl(
     \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
+    \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 }
 \description{

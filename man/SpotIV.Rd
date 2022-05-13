@@ -32,9 +32,11 @@ SpotIV(
 
 \item{bs.Niter}{a positive integer indicating the number of bootstrap resampling for computing the confidence interval.}
 
-\item{M}{an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 3.}
+\item{M}{an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 2.}
 
 \item{M.est}{True or False, whether estimate M based on BIC. Default is True.}
+
+\item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE).}
 
 \item{intercept}{a boolean scalar indicating to include the intercept or not. Default is TRUE.}
 
@@ -47,8 +49,6 @@ SpotIV(
 \item{bw}{a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
 
 \item{parallel}{True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.}
-
-\item{V}{the set of valid IVs for implementing the oracle control function method}
 }
 \value{
 \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}

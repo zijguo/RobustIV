@@ -7,11 +7,11 @@
 #' SearchingSampling
 #' @description The proposed searching/sampling method
 #'
-#' @param Y outcome vector
-#' @param D treatment vector
-#' @param Z instruments
-#' @param X covariates (default=\code{NULL})
-#' @param intercept fit model with intercept or not (default=\code{TRUE})
+#' @param Y continuous and non-missing, n by 1 numeric outcome vector.
+#' @param D continuous or discrete, non-missing, n by 1 numeric treatment vector.
+#' @param Z continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments..
+#' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates, with default=\code{NULL}
+#' @param intercept a boolean scalar indicating to include the intercept or not, with default \code{TRUE}.
 #' @param lowd if \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})
 #' @param robust if \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
 #' @param CI.init initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
@@ -23,14 +23,15 @@
 #' @param filtering filtering sampling or not (default=\code{TRUE})
 #'
 #' @return
-#' \item{CI}{confidence interval for beta}
-#' \item{check}{the plurality rule being checked TRUE or FALSE emprically}
-#' \item{VHat}{valid instruments}
-#' \item{SHat}{relevant instruments}
+#' \item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
+#' \item{check}{True or False indicating whether the plurality rule  is satisfied or not emprically.}
+#' \item{VHat}{a numeric vector denoting the set of valid and relevant IVs.}
+#' \item{SHat}{a numeric vector denoting the set of relevant IVs.}
 #' @export
 #' @import intervals MASS SIHR
 #' @examples
-#'########### Example: for lowd setting ########### 
+#'########### Example: for lowd setting ###########
+#'\dontrun{
 #'library(intervals);libary(MASS);library(SIHR)
 #'case = "homo" # "homo" or "hetero"
 #'set.seed(0)
@@ -43,7 +44,7 @@
 #'s1 = 2; s2 = 4; s=s1+s2
 #'alpha = c(rep(0,L-s),rep(pi.value,s1),-seq(1,s2)/3)
 #'gamma=rep(IV.str,L)
-#'p=L+px # p stands for the number of total exogeneous variables 
+#'p=L+px # p stands for the number of total exogeneous variables
 #'phi<-rep(0,px)
 #'psi<-rep(0,px)
 #'phi[1:px]<-(1/px)*seq(1,px)+0.5
@@ -74,22 +75,22 @@
 #'
 #'out1 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = FALSE)
 #'out2 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = TRUE)
-#'out1$CI; out2$CI
+#'out1$CI; out2$CI}
 
-SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE, 
-                              lowd=TRUE, 
+SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
+                              lowd=TRUE,
                               robust=TRUE,
                               CI.init = NULL,
                               a=0.6,
-                              Sampling=TRUE, 
+                              Sampling=TRUE,
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
 
   if(is.null(X)) W = Z else W = cbind(Z, X)
   n = length(Y); pz = ncol(Z); p = ncol(W)
-  
+
   ## Preparation
   if(intercept) W = cbind(W, 1)
-  
+
   if(lowd){
     covW = t(W)%*%W/n
     U = solve(covW) # precision matrix
@@ -116,7 +117,7 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
   }else{
     ## LF estimators
     robust=FALSE # we only consider homoscedastic setting for LF estimator
-    init_Y = Lasso.init(W, Y) 
+    init_Y = Lasso.init(W, Y)
     init_D = Lasso.init(W, D)
     ## residual
     resid_Y = as.vector(Y - W%*%init_Y)
@@ -139,17 +140,17 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
       }
     }
     WUMat = W%*%U
-    
+
     SigmaSqY = sum(resid_Y^2)/(n-1)
     SigmaSqD = sum(resid_D^2)/(n-1)
     SigmaYD = sum(resid_Y * resid_D)/(n-1)
-    
+
     Temp = t(WUMat)%*%WUMat / n
     V.Gamma = SigmaSqY * Temp
     V.gamma = SigmaSqD * Temp
     C = SigmaYD * Temp
   }
-  
+
   TSHT.out <- TSHT.Init(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C)
   V0.hat = sort(TSHT.out$VHat)
   ## Construct range [L, U]
@@ -165,10 +166,10 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     uni = Intervals(CI.init)
     CI.init.union = as.matrix(interval_union(uni))
   }
-  
+
   # Construct beta.grid
   beta.grid = grid.CI(CI.init.union, grid.size=n^{-a})
-  
+
   if(Sampling){
     ## Sampling Method
     CI.sampling = Searching.CI.sampling(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet=V0.hat,
@@ -182,8 +183,8 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     CI=CI.searching$CI
     rule=CI.searching$rule
   }
-  returnList <- list(CI=CI, check=rule, VHat=V0.hat, SHat=TSHT.out$SHat)
-  
+  returnList <- list(ci=CI, check=rule, VHat=V0.hat, SHat=TSHT.out$SHat)
+
   return(returnList)
 }
 
@@ -201,10 +202,10 @@ Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.gr
   threshold.size = length(InitiSet)/2
   n.beta = length(beta.grid)
   pz = dim(V.Gamma)[1]
-  
+
   ## new rho method
   Tn = qnorm(1-0.05/(2*pz))
-  
+
   ## valid grid
   valid.grid = rep(NA, n.beta)
   for(j in 1:n.beta){
@@ -212,7 +213,7 @@ Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.gr
     temp = sqrt(diag(V.Gamma + b^2*V.gamma - 2*b*C)/n)
     valid.grid[j] = sum(abs(ITT_Y[InitiSet] - b*ITT_D[InitiSet]) < Tn*temp[InitiSet])
   }
-  
+
   ## select beta
   if(length(beta.grid[which(valid.grid > threshold.size)])==0){
     rule=FALSE
@@ -223,7 +224,7 @@ Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.gr
     sel.index = which(valid.grid>threshold.size)
   }
   CI = t(as.matrix(c(min(beta.grid[sel.index]), max(beta.grid[sel.index]))))
-  
+
   return(list(CI=CI, rule=rule))
 }
 
@@ -232,19 +233,19 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
   threshold.size = length(InitiSet)/2
   n.beta = length(beta.grid)
   pz = dim(V.Gamma)[1]
-  
+
   ## new rho method
   Tn = qnorm(1-0.05/(2*pz))
-  
+
   ## Covariance Matrix
   Cov1 = cbind(V.Gamma/n, C/n)
   Cov2 = cbind(t(C/n), V.gamma/n)
   Cov.total = rbind(Cov1, Cov2)
-  
+
   valid.grid.sample = matrix(NA, nrow=M, ncol=n.beta)
   Gen.mat = MASS::mvrnorm(M, rep(0, 2*pz), Cov.total)
   if(is.null(rho)) rho = (log(n)/M)^(1/(2*length(InitiSet)))/6 # initial rho if not specified
-  
+
   if(filtering){
     temp1 = abs(t(t(Gen.mat[,InitiSet])/sqrt(diag(V.Gamma)[InitiSet]/n)))
     temp2 = abs(t(t(Gen.mat[,pz+InitiSet])/sqrt(diag(V.gamma)[InitiSet]/n)))
@@ -254,7 +255,7 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
     Gen.mat = Gen.mat[temp,]
     M = sum(temp)
   }
-  
+
   while(rho < 0.5){
     for(m in 1:M){
       ITT_Y.sample = ITT_Y - Gen.mat[m, 1:pz]
@@ -274,12 +275,12 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
       }
     }
     CI = CI[!rowSums(is.na(CI)), , drop=FALSE] # CI = na.omit(CI)
-    
+
     ## check CI dims, stop iterations if CI dim is big enough
     if(dim(as.matrix(CI))[1] >= prop*M) break
     rho = 1.25 * rho # increase rho with iterations
   }
-  
+
   rule = TRUE
   if(dim(as.matrix(CI))[1] < prop*M){
     warning("Sampling Criterion not met, trasfer to Searching Method.")
@@ -291,7 +292,7 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
     CI = as.matrix(interval_union(uni))
     CI = t(as.matrix(c(min(CI[,1]), max(CI[,2]))))
   }
-  
+
   return(list(CI=CI, rule=rule))
 }
 
@@ -301,26 +302,26 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
   Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
   SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
   if(length(SHat)==0){
-    warning("First Thresholding Warning: IVs individually weak. 
-            TSHT with these IVs will give misleading CIs, SEs, and p-values. 
+    warning("First Thresholding Warning: IVs individually weak.
+            TSHT with these IVs will give misleading CIs, SEs, and p-values.
             Use more robust methods.")
     warning("Defaulting to treating all IVs as strong.")
     SHat= 1:pz
   }
   SHat.bool = rep(FALSE, pz); SHat.bool[SHat] = TRUE
-  
+
   ## Second Stage
   nCand = length(SHat)
   VHats.bool = matrix(FALSE, nCand, nCand)
   colnames(VHats.bool) = rownames(VHats.bool) = SHat
-  
+
   for(j in SHat){
     beta.j = ITT_Y[j]/ITT_D[j]
     pi.j = ITT_Y - ITT_D * beta.j
     Temp = V.Gamma + beta.j^2*V.gamma - 2*beta.j*C
     SE.j = rep(NA, pz)
     for(k in 1:pz){
-      SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] - 
+      SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] -
                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
     PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
@@ -334,11 +335,11 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
     }
   }
   diag(VHats.boot.sym) = 1
-  
+
   VM= apply(VHats.boot.sym,1,sum)
   VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
   VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
-  
+
   V.set<-NULL
   for(index in union(VM.m,VM.p)){
     V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
@@ -348,7 +349,7 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
     VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
   }
   VHat=sort(as.numeric(VHat))
-  
+
   out <- list(SHat=SHat, VHat=VHat, voting.mat=VHats.boot.sym)
   return(out)
 }
@@ -356,7 +357,7 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
 Lasso.init <- function(X, y, lambda = "CV.min", intercept = FALSE) {
   p <- ncol(X)
   n <- nrow(X)
-  
+
   htheta <- if (lambda == "CV") {
     outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
                         intercept = intercept)
