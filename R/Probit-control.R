@@ -188,7 +188,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
       beta.sd<-sqrt(mean((unlist(lapply(bs.lst, function(x) x[2]))-beta.hat)^2))
     }
   }
-  Probit.model <- list(betaHat=beta.hat, beta.sdHat=beta.sd, caceHat=cace.hat, cace.sdHat= cace.sd, SHat=SHat, VHat = VHat, Maj.pass=Maj.pass)
+  Probit.model <- list(betaHat=beta.hat, beta.sdHat=beta.sd, caceHat=cace.hat, cace.sdHat= cace.sd, SHat=SHat, VHat = as.numeric(VHat), Maj.pass=Maj.pass)
   structure(Probit.model, out = "SpotIV")
   return(Probit.model)
 }
