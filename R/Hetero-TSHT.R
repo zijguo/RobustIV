@@ -1,5 +1,5 @@
 
-TSHT_hetero <- function(Y, D, Z, X, intercept=TRUE, alpha = 0.05, tuning=2.01,
+TSHT_hetero <- function(Y, D, Z, X, intercept=TRUE, alpha = 0.05,
                         method="OLS", voting = 'MaxClique'){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
@@ -40,7 +40,6 @@ TSHT_hetero <- function(Y, D, Z, X, intercept=TRUE, alpha = 0.05, tuning=2.01,
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
-  stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
   stopifnot(method=='OLS')
   stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
 
@@ -51,7 +50,7 @@ TSHT_hetero <- function(Y, D, Z, X, intercept=TRUE, alpha = 0.05, tuning=2.01,
 
   # Estimate Valid IVs
   SetHats = TSHT.VHat_hetero(n, inputs$ITT_Y, inputs$ITT_D,
-                             inputs$V.Gamma, inputs$V.gamma, inputs$C, tuning, voting)
+                             inputs$V.Gamma, inputs$V.gamma, inputs$C, voting)
   VHat = SetHats$VHat; SHat = SetHats$SHat
   check = T
   if(length(VHat)< length(SHat)/2){
@@ -141,10 +140,10 @@ TSHT.OLS_hetero <- function(Y, D, W, pz, intercept=TRUE){
   return(out)
 }
 
-TSHT.VHat_hetero <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, tuning = 2.01,voting = 'MaxClique'){
+TSHT.VHat_hetero <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'){
   pz = nrow(V.Gamma)
   ## First Stage
-  Tn = max(sqrt(tuning*log(pz)), sqrt(log(n)/2))
+  Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
   SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
 
   if(length(SHat)==0){
@@ -171,7 +170,7 @@ TSHT.VHat_hetero <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, tuning = 2.01
                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
 
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(tuning^2*log(pz))
+    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
     VHat.bool.j = PHat.bool.j * SHat.bool
     VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
   }

@@ -5,22 +5,22 @@
 
 ############# Main Function #############
 #' SearchingSampling
-#' @description The proposed searching/sampling method
+#' @description Conduct Searching-Sampling method, which can construct uniformly valid confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
 #'
-#' @param Y continuous and non-missing, n by 1 numeric outcome vector.
-#' @param D continuous or discrete, non-missing, n by 1 numeric treatment vector.
-#' @param Z continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments..
-#' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates, with default=\code{NULL}
-#' @param intercept a boolean scalar indicating to include the intercept or not, with default \code{TRUE}.
-#' @param lowd if \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})
-#' @param robust if \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
-#' @param CI.init initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
-#' @param a grid size for constructing beta grids (default=0.6)
-#' @param Sampling if \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
-#' @param rho initial value constructed for sampling method (default=\code{NULL})
-#' @param M sampling times. (default=1000)
-#' @param prop proportion of intervals kept when sampling. (default=0.1)
-#' @param filtering filtering sampling or not (default=\code{TRUE})
+#' @param Y A vector of outcomes.
+#' @param D A continuous vector of endogenous variables.
+#' @param Z A matrix of instruments.
+#' @param X A matrix of exogenous covariates.
+#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param lowd If \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})
+#' @param robust If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
+#' @param CI.init Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
+#' @param a Grid size for constructing beta grids (default=0.6)
+#' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
+#' @param rho Initial value constructed for sampling method (default=\code{NULL})
+#' @param M Sampling times. (default = 1000)
+#' @param prop Proportion of intervals kept when sampling. (default=0.1)
+#' @param filtering Filtering sampling or not (default=\code{TRUE})
 #'
 #' @return
 #' \item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
@@ -30,52 +30,17 @@
 #' @export
 #' @import intervals MASS SIHR
 #' @examples
-#'########### Example: for lowd setting ###########
 #'\dontrun{
-#'library(intervals);libary(MASS);library(SIHR)
-#'case = "homo" # "homo" or "hetero"
-#'set.seed(0)
-#'n = 500
-#'VIO.str = 0.2
-#'IV.str = 0.5
-#'pi.value = IV.str*VIO.str
-#'beta = 1
-#'L = 10; px=10
-#'s1 = 2; s2 = 4; s=s1+s2
-#'alpha = c(rep(0,L-s),rep(pi.value,s1),-seq(1,s2)/3)
-#'gamma=rep(IV.str,L)
-#'p=L+px # p stands for the number of total exogeneous variables
-#'phi<-rep(0,px)
-#'psi<-rep(0,px)
-#'phi[1:px]<-(1/px)*seq(1,px)+0.5
-#'psi[1:px]<-(1/px)*seq(1,px)+1
-#'rho=0.5
-#'A1gen <- function(rho, p){
-#'  A1 = matrix(0, nrow=p, ncol=p)
-#'  for(i in 1:p) for(j in 1:p) A1[i, j] = rho^(abs(i-j))
-#'  return(A1)
-#'}
-#'Cov<-(A1gen(rho,p))
-#'W = mvrnorm(n, rep(0, p), Cov)
-#'Z = W[, 1:L]
-#'X = W[, (L+1):p]
-#'if(case=="hetero"){
-#'  epsilon1 = rnorm(n)
-#'  tao1 = rep(NA, n); for(i.n in 1:n) tao1[i.n] = rnorm(n=1, mean=0, sd=0.25+0.5*(Z[i.n, 1])^2)
-#'  tao2 = rnorm(n)
-#'  epsilon2 = 0.3*epsilon1 + sqrt((1-0.3^2)/(0.86^4+1.38072^2))*(1.38072*tao1+0.86^2*tao2)
-#'}else if(case=="homo"){
-#'  epsilonSigma = matrix(c(1, 0.8, 0.8, 1), 2, 2)
-#'  epsilon = mvrnorm(n, rep(0, 2), epsilonSigma)
-#'  epsilon1 = epsilon[,1]
-#'  epsilon2 = epsilon[,2]
-#'}
-#'D = 0.5 + Z %*% gamma+ X%*% psi + epsilon1
-#'Y = -0.5 + Z %*% alpha + D * beta + X%*%phi+ epsilon2
+#' Y <- mroz[,"lwage"]
+#' D <- mroz[,"educ"]
+#' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+#' X <- mroz[,"age"]
+#' Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
+#' summary(Searching.model)
+#' SS.model <- SearchingSampling(Y,D,Z,X)
+#' summary(SS.model)
 #'
-#'out1 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = FALSE)
-#'out2 <- SearchingSampling(Y, D, Z, X, robust=TRUE, Sampling = TRUE)
-#'out1$CI; out2$CI}
+#' }
 
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               lowd=TRUE,
@@ -183,11 +148,35 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     CI=CI.searching$CI
     rule=CI.searching$rule
   }
-  returnList <- list(ci=CI, check=rule, VHat=V0.hat, SHat=TSHT.out$SHat)
-
+  VHat=V0.hat; SHat=TSHT.out$SHat;
+  if (!is.null(colnames(Z))) {
+    SHat = colnames(Z)[SHat]
+    VHat = colnames(Z)[VHat]
+  }
+  returnList <- list(ci=CI, check=rule, VHat=VHat, SHat=SHat)
+  class(returnList) <- "SS"
   return(returnList)
 }
 
+summary.SS<- function(object,...){
+  return(object)
+}
+
+print.SS<- function(x,...){
+  SS <- x
+  cat("\nInitial set of Valid Instruments:", SS$VHat, "\n");
+  cat("\nRelevant Instruments:", SS$SHat,"\n","\nThus, Majority rule",ifelse(SS$check,"holds.","does not hold."), "\n");
+  cat(rep("_", 30), "\n")
+  if (nrow(SS$ci)==1) {
+    cat("\nConfidence Interval of BetaHat: [", SS$ci[1], ",", SS$ci[2], "]", "\n", sep = '');
+  } else {
+    cat("\nConfidence Interval of BetaHat:\n")
+    for (i in 1:nrow(SS$ci)) {
+      cat("[", SS$ci[i,1], ",", SS$ci[i,2], "]", "\n", sep = '')
+    }
+  }
+
+}
 
 
 ########### Helpers function #############

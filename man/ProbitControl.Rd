@@ -18,61 +18,52 @@ ProbitControl(
 )
 }
 \arguments{
-\item{Y}{binary and non-missing, n by 1 numeric outcome vector.}
+\item{Y}{A vector of outcomes.}
 
-\item{D}{continuous and non-missing, n by 1 numeric treatment vector.}
+\item{D}{A continuous vector of endogenous variables.}
 
-\item{Z}{continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments.}
+\item{Z}{A matrix of instruments.}
 
-\item{X}{optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.}
+\item{X}{A matrix of exogenous covariates.}
 
-\item{d1}{a scalar for computing CATE(d1,d2|z0).}
+\item{d1}{a treatment value for computing CATE(d1,d2|w0).}
 
-\item{d2}{a scalar for computing CATE(d1,d2|z0).}
+\item{d2}{a treatment value for computing CATE(d1,d2|w0).}
 
-\item{w0}{a (pz+px) by 1 vector for computing CATE(d1,d2|z0).}
+\item{w0}{a vector for computing CATE(d1,d2|w0).}
 
-\item{bs.Niter}{a positive integer indicating the number of bootstrap resampling for computing the confidence interval.}
+\item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval.}
 
-\item{intercept}{a boolean scalar indicating to include the intercept or not. Default is TRUE.}
+\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
 
-\item{method}{'valid' or 'majority', indicating whether imposing the assumption of valid IVs ('valid') or possibly invalid IVs with majority rule ('majority'). Default is majority.}
+\item{method}{If 'majority', the method is robust to the presence of possibly invalid IVs; If 'valid', the method assumes all IVs to be valid. (default = 'majority')}
 }
 \value{
-\item{\code{betaHat}}{a numeric scalar denoting the estimate of beta/sig_u.}
-    \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
-    \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
-    \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
-    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
-    \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
+\code{ProbitControl} returns an object of class "SpotIV".
+    An object class "SpotIV" is a list containing the following components:
+    \item{\code{betaHat}}{The estimate of causal parameter.}
+    \item{\code{beta.sdHat}}{The estimated standard deviation of betaHat.}
+    \item{\code{cateHat}}{The estimate of CATE(d1,d2|w0).}
+    \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
+    \item{\code{SHat}}{The estimated set of relevant IVs.}
+    \item{\code{VHat}}{The estimated set of relevant and valid IVs.}
+    \item{\code{Maj.pass}}{Whether the majority rule test is passed or not.}
 }
 \description{
-Causal inference in probit outcome model with IVs, which provides the robust inference of the treatment effect in probit outcome models.
+Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using SpotIV method.
 }
 \examples{
 \dontrun{
-### Working Low Dimensional Example ###
-library(mvtnorm)
-library(MASS)
-n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
-Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
-gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
-cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
-noise.vec<-rmvnorm(n, rep(0,2), cov.noise)
-v.vec<-noise.vec[,1]
-X<-matrix(runif(n*2), ncol=2)
-D = 0.5+Z \%*\% gam + v.vec
-pi0 <- c(rep(0, s), 0.8, 0.4)
-beta0 <- 0.25
-u.vec<- noise.vec[,2]
-Y = (-0.5 + Z \%*\% pi0 + D * beta0 + u.vec>=0)
-u1.r<-rnorm(2000,0,sd=1)
-cace0 <- mean((as.numeric(-0.5+d1 * beta0 + z0 \%*\% pi0)+ u1.r )>=0) - mean((as.numeric(-0.5+d2 * beta0 + z0 \%*\% pi0) + u1.r)>=0)
-ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='valid', intercept=T)
-ProbitControl(Y=Y, D=D, Z=Z, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='majority', intercept=T)
+Y <- mroz[,"lwage"]
+D <- mroz[,"educ"]
+Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+X <- mroz[,"age"]
+Y0 <- as.numeric((Y>median(Y)))
+d2 = median(D); d1 = d2+1;
+w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
+Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
+summary(Probit.model)
 }
-
 
 
 

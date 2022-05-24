@@ -1,51 +1,47 @@
 
 
 #' @title Endogeneity-test
-#' @description Endogneity test function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+#' @description Conduct the endogeneity test in high-dimensional linear models in the presence of potentially invalid instrumental variables.
 #'
-#' @param Y continuous and non-missing, n by 1 numeric outcome vector.
-#' @param D continuous or discrete, non-missing, n by 1 numeric treatment vector.
-#' @param Z continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments.
-#' @param X optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.
-#' @param intercept a boolean scalar indicating to include the intercept or not, with default TRUE.
-#' @param alpha a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.
-#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
-#' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
-#' @param method a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")
-#' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)
-#' @param voting a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.
+#' @param Y A continuous vector of outcomes.
+#' @param D A continuousvector of endogenous variables.
+#' @param Z A matrix of instruments.
+#' @param X A matrix of exogenous covariates.
+#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param alpha The significance level for the confidence interval. (default = 0.05)
+#' @param method The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "DeLasso")
+#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = TRUE)
+#' @param voting The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')
 #'
 #'
 #' @return
-#'    \item{\code{Q}}{numeric value : our endogeneity test statistic.}
-#'    \item{\code{Sigma12}}{numeric value : estimated covaraince.}
-#'    \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs.}
+#'     \code{endo.test} returns an object of class "endotest".
+#'     An object class "endotest" is a list containing the following components:
+#'    \item{\code{Q}}{Endogeneity test statistic.}
+#'    \item{\code{Sigma12}}{Estimated covaraince.}
+#'    \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
+#'    \item{\code{alpha}}{The significance level.}
 #' @export
 #'
 #' @examples
-#'
-#'
-#'
-#' library(MASS)
-#' library(RobustIV)
-#'
-#' ## Generate the data
-#' n = 300; L = 400; s = 3; nRelevant = 10
-#' alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
+#' \dontrun{
+#' n = 500; L = 600; s = 3; k = 10; px = 10;
+#' alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
+#' phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
 #' epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
 #' Z = matrix(rnorm(n*L),n,L)
-#' epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-#' D =  0.5 + Z %*% gamma + epsilon[,1]
-#' Y = -0.5 + Z %*% alpha + D * beta + epsilon[,2]
+#' X = matrix(rnorm(n*px),n,px)
+#' epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
+#' D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
+#' Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
+#' TSHT(Y,D,Z,X, method = "DeLasso")
+#' endo.test.model <- endo.test(Y,D,Z,X)
+#' summary(endo.test.model)
+#' }
 #'
-#' ## Implement the endogeneity test
-#'
-#' endo.test(Y,D,Z)
-#' endo.test(Y,D,Z,max_clique = TRUE)
 #'
 #'
-#'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tuning=2.01,method="DeLasso",
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method="DeLasso",
                       invalid=TRUE, voting = 'MaxClique'){
   # Check and Clean Input Type #
   # Check Y
@@ -89,7 +85,6 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tunin
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
-  stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
   stopifnot(method=='OLS' | method=='DeLasso')
 
   # Derive Inputs for Endogeneity test
@@ -107,12 +102,12 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tunin
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,boot.SHat = boot.SHat, tuning=tuning, voting = voting)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW, voting = voting)
     Set = SetHats$VHat
   } else {
     SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW,boot.SHat = boot.SHat, tuning=tuning)
+                         SigmaYD=inputs$SigmaYD,covW=inputs$covW)
     Set = SetHats
   }
   WUMat = inputs$WUMat
@@ -127,37 +122,35 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05,boot.SHat = FALSE, tunin
 
   VarSig12 = inputs$SigmaSqD^2*Var1+Var2
   Q = sqrt(n)*Sigma12/sqrt(VarSig12) # our test statistic
-  cat("Test result : our test statistics Q=",Q,"\n")
-  if (abs(Q)>qnorm(1-alpha/2)) {
-    cat("'H0 : Sigma12 = 0' is rejected","\n")
-  } else {
-    cat("'H0 : Sigma12 = 0' is not rejected","\n")
+
+  if (!is.null(colnames(Z))) {
+    VHat = colnames(Z)[Set]
   }
-  endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set)
-  structure(endo.test.model, class = "endo.test")
+  endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set,alpha = alpha)
+  class(endo.test.model) <- "endotest"
   return(endo.test.model)
 
 }
 
-#' @title Relevant Instrumental Variable Selection for endogeneity test
-#'
-#' @description Implementation of Hard Thresholding for relevant instrumental variable selection. This function only takes the necessary inputs of the functions \code{\link{TSHT.OLS}} or \code{\link{TSHT.DeLasso}}. Any other methods to compute the necessary inputs can be adopted by the users according to their preferences.
-#'
-#' @param ITT_Y a p_z by 1 numeric vector denoting the estimated coefficients of instruments in the treatment model.
-#' @param ITT_D a p_z by 1 numeric vector denoting the estimated coefficients of instruments in the treatment model.
-#' @param WUMat a numeric matrix denoting WU where U is the precision matrix of W and W is the instrument-covariate matrix (Z, X).
-#' @param SigmaSqY a numeric scalar denoting the consistent estimator of the noise level in the outcome model.
-#' @param SigmaSqD a numeric scalar denoting the consistent estimator of the noise level in the treatment model.
-#' @param SigmaYD a numeric scalar denoting the consistent estimator of the covariance between the error term in the treatment model and the error term in the outcome model.
-#' @param covW a numeric, non-missing matrix that computes the sample covariance of W.
-#' @param boot.SHat a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.
-#' @param tuning a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.
-#'
-#' @return
-#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#' @export
-#'
-endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,boot.SHat = FALSE,tuning = 2.01) {
+summary.endotest<- function(object,...){
+  return(object)
+}
+
+print.endotest<- function(x,...){
+  endotest <- x
+  cat("\nValid Instruments:", endotest$VHat, "\n");
+  cat(rep("_", 30), "\n")
+  cat("Test statistics Q = ",endotest$Q,"\n")
+  if (abs(endotest$Q)>qnorm(1-endotest$alpha/2)) {
+    cat("'H0 : Sigma12 = 0' is rejected at the significance level",endotest$alpha,".\n")
+  } else {
+    cat("'H0 : Sigma12 = 0' is not rejected at the significance level",endotest$alpha,".\n")
+  }
+  cat("P-value = ",1-pnorm(abs(endotest$Q)),"\n")
+  cat("Estimated covariance:",endotest$Sigma12,"\n");
+}
+
+endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))
@@ -172,20 +165,15 @@ endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,boot.SHat
   stopifnot(!missing(SigmaSqD), is.numeric(SigmaSqD), length(SigmaSqD) == 1, !is.na(SigmaSqD),SigmaSqD > 0)
   stopifnot(!missing(SigmaYD),is.numeric(SigmaYD), length(SigmaYD) == 1,!is.na(SigmaYD))
 
-  # Other Input check
-  stopifnot(is.numeric(tuning),length(tuning) == 1, tuning >=2)
 
   # Constants
   n = nrow(WUMat);
   pz = length(ITT_Y)
   # First Stage
-  if(boot.SHat==TRUE){
-    Tn<-min(cut.off.IVStr(SigmaSqD,WUMat,pz,cut.prob = 0.95),sqrt(log(n))) ### this can be modified by the user
-    SE.norm<-(diag(solve(covW)/n)^{1/2})[1:pz]
-    SHat<-(1:pz)[abs(ITT_D)>Tn*sqrt(SigmaSqD)*SE.norm]
-  }else{
-    SHat = (1:pz)[(abs(ITT_D) >= (sqrt(SigmaSqD * colSums(WUMat^2) /n) * sqrt(tuning*log(pz)/n)))]
-  }
+  Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
+
+  SHat = (1:pz)[(abs(ITT_D) >= (sqrt(SigmaSqD * colSums(WUMat^2) /n) * sqrt(Tn^2/n)))]
+
   if(length(SHat) == 0) {
     warning("First Thresholding Warning: IVs individually weak. TSHT with these IVs will give misleading CIs, SEs, and p-values. Use more robust methods.")
     warning("Defaulting to treating all IVs as strong.")
