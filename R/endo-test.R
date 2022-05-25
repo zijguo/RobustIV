@@ -131,11 +131,23 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method="DeLasso",
   return(endo.test.model)
 
 }
-
+#' Summary of endotest
+#'
+#' @param object endotest object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.endotest<- function(object,...){
   return(object)
 }
-
+#' Summary of endotest
+#'
+#' @param object endotest object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.endotest<- function(x,...){
   endotest <- x
   cat("\nValid Instruments:", endotest$VHat, "\n");

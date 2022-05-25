@@ -185,11 +185,23 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
   class(SpotIV.model) <- "SpotIV"
   return(SpotIV.model)
 }
-
+#' Summary of SpotIV
+#'
+#' @param object SpotIV object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.SpotIV <- function(object,...){
   return(object)
 }
-
+#' Summary of SpotIV
+#'
+#' @param object SpotIV object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.SpotIV <- function(x,...){
   SpotIV <- x
   cat("\nValid Instruments:", SpotIV$VHat, "\n");

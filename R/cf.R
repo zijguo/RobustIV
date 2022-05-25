@@ -167,10 +167,24 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
   class(out) = 'cf'
   return(out)
 }
+
+#' Summary of cf
+#'
+#' @param object cf object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.cf<- function(object,...){
   return(object)
 }
-
+#' Summary of cf
+#'
+#' @param object cf object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.cf<- function(x,...){
   cf <- x
   cat(rep("_", 30), "\n")
@@ -261,11 +275,23 @@ pretest <- function(formula,alpha = 0.05){
   class(pretest.val) = 'pretest'
   return(pretest.val)
 }
-
+#' Summary of pretest
+#'
+#' @param object pretest object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.pretest<- function(object,...){
   return(object)
 }
-
+#' Summary of pretest
+#'
+#' @param object pretest object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.pretest<- function(x,...){
   pretest <- x
   cat(rep("_", 30), "\n")

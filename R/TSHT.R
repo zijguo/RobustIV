@@ -321,10 +321,25 @@ cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
   return(critical.val)
 }
 
+
+#' Summary of TSHT
+#'
+#' @param object TSHT object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.TSHT <- function(object,...){
   return(object)
 }
 
+#' print of TSHT
+#'
+#' @param x TSHT object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.TSHT <- function(x,...){
   TSHT <- x
   cat("\nValid Instruments:", TSHT$VHat, "\n");

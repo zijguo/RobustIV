@@ -157,11 +157,23 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
   class(returnList) <- "SS"
   return(returnList)
 }
-
+#' Summary of SS
+#'
+#' @param object SS object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 summary.SS<- function(object,...){
   return(object)
 }
-
+#' Summary of SS
+#'
+#' @param object SS object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
 print.SS<- function(x,...){
   SS <- x
   cat("\nInitial set of Valid Instruments:", SS$VHat, "\n");
