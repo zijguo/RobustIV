@@ -7,7 +7,7 @@
 \method{print}{pretest}(x, ...)
 }
 \arguments{
-\item{object}{pretest object}
+\item{x}{pretest object}
 }
 \value{
 

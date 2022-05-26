@@ -7,7 +7,7 @@
 \method{print}{endotest}(x, ...)
 }
 \arguments{
-\item{object}{endotest object}
+\item{x}{endotest object}
 }
 \value{
 

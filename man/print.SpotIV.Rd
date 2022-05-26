@@ -7,7 +7,7 @@
 \method{print}{SpotIV}(x, ...)
 }
 \arguments{
-\item{object}{SpotIV object}
+\item{x}{SpotIV object}
 }
 \value{
 

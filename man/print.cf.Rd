@@ -7,7 +7,7 @@
 \method{print}{cf}(x, ...)
 }
 \arguments{
-\item{object}{cf object}
+\item{x}{cf object}
 }
 \value{
 

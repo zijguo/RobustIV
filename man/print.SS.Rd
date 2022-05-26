@@ -7,7 +7,7 @@
 \method{print}{SS}(x, ...)
 }
 \arguments{
-\item{object}{SS object}
+\item{x}{SS object}
 }
 \value{
 

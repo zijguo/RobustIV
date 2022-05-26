@@ -138,7 +138,7 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
 
   if  (is.null(lambda)){
     lambda <- sqrt(qnorm(1-(0.1/p))/n);
-    outLas <- slim(X,y,lambda=c(lambda),method="lq",q=2,verbose=FALSE);
+    outLas <- flare::slim(X,y,lambda=c(lambda),method="lq",q=2,verbose=FALSE);
     # Objective : sqrt(RSS/n) +lambda *penalty
     if (intercept==TRUE) {
       return (c(as.vector(outLas$intercept),as.vector(outLas$beta)))

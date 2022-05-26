@@ -143,7 +143,7 @@ summary.endotest<- function(object,...){
 }
 #' Summary of endotest
 #'
-#' @param object endotest object
+#' @param x endotest object
 #' @param ...
 #' @keywords internal
 #' @return

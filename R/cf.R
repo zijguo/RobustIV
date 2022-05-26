@@ -18,7 +18,8 @@
 #' @export
 #'
 #'
-#' @importFrom stats as.formula lm pchisq quantile resid vcov
+#' @importFrom stats lm pchisq quantile resid vcov
+#' @importFrom Formula as.Formula
 #'
 #' @examples
 #' \dontrun{
@@ -180,7 +181,7 @@ summary.cf<- function(object,...){
 }
 #' Summary of cf
 #'
-#' @param object cf object
+#' @param x cf object
 #' @param ...
 #' @keywords internal
 #' @return
@@ -287,7 +288,7 @@ summary.pretest<- function(object,...){
 }
 #' Summary of pretest
 #'
-#' @param object pretest object
+#' @param x pretest object
 #' @param ...
 #' @keywords internal
 #' @return

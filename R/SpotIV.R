@@ -195,9 +195,10 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
 summary.SpotIV <- function(object,...){
   return(object)
 }
+
 #' Summary of SpotIV
 #'
-#' @param object SpotIV object
+#' @param x SpotIV object
 #' @param ...
 #' @keywords internal
 #' @return

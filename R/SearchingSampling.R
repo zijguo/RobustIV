@@ -169,7 +169,7 @@ summary.SS<- function(object,...){
 }
 #' Summary of SS
 #'
-#' @param object SS object
+#' @param x SS object
 #' @param ...
 #' @keywords internal
 #' @return
