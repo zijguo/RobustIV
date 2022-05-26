@@ -185,6 +185,7 @@ D = Z\gamma + X\psi + v
 ## TSHT
 
 ```R
+> set.seed(1)
 > n = 500; L = 600; s = 3; k = 10; px = 10;
 > alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 > phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
@@ -196,16 +197,16 @@ D = Z\gamma + X\psi + v
 > Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
 > summary(TSHT(Y,D,Z,X, method = "DeLasso"))
 
-Valid Instruments: 4 5 6 7 9 10 
+Valid Instruments: 4 5 6 7 8 9 10 
 
 Relevant Instruments: 1 2 3 4 5 6 7 8 9 10 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-BetaHat: 1.018932 
+BetaHat: 0.9893991 
 
-Confidence Interval of BetaHat: [0.9841815,1.053682]
+Confidence Interval of BetaHat: [0.9582907,1.020508]
 
 ```
 
@@ -214,6 +215,7 @@ It uses same reduced form estimator as TSHT in each setting.
 
 
 ```R
+> set.seed(1)
 > n = 500; L = 600; s = 3; k = 10; px = 10;
 > alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 > phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
@@ -225,14 +227,13 @@ It uses same reduced form estimator as TSHT in each setting.
 > Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
 > endo.test.model <- endo.test(Y,D,Z,X)
 > summary(endo.test.model)
- 
+
 Valid Instruments: 4 5 6 7 8 9 10 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-Test statistics Q =  13.71776 
-'H0 : Sigma12 = 0' is rejected at level of significance 0.05 
+Test statistics Q =  13.47976 
+'H0 : Sigma12 = 0' is rejected at the significance level 0.05 .
 P-value =  0 
-Estimated covariance: 0.8922838 
-
+Estimated covariance: 0.7690532 
 ```
 
 ### Reference
