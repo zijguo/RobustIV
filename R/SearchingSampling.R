@@ -1,8 +1,3 @@
-##################################
-### Date: 4/28/2022
-### Author: Zhenyu WANG
-
-
 ############# Main Function #############
 #' SearchingSampling
 #' @description The proposed searching/sampling method
@@ -78,84 +73,75 @@
 #'out1$CI; out2$CI}
 
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
-                              lowd=TRUE,
-                              robust=TRUE,
-                              CI.init = NULL,
-                              a=0.6,
+                              method=c("OLS","DeLasso","Fast.DeLasso"),
+                              robust=TRUE, 
                               Sampling=TRUE,
+                              CI.init = NULL,
+                              a=0.6, alpha=0.05,
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
+  method = match.arg(method)
+  if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
+    robust = FALSE
+    cat(sprintf("For methods %s, robust is set FALSE, 
+                as we only consider homoscedastic noise.\n", method))
+  }
 
   if(is.null(X)) W = Z else W = cbind(Z, X)
   n = length(Y); pz = ncol(Z); p = ncol(W)
 
-  ## Preparation
-  if(intercept) W = cbind(W, 1)
-
-  if(lowd){
-    covW = t(W)%*%W/n
-    U = solve(covW) # precision matrix
-    WUMat = (W%*%U)[,1:pz]
-    ## OLS estimators
-    qrW = qr(W)
-    ITT_Y = qr.coef(qrW, Y)[1:pz]
-    ITT_D = qr.coef(qrW, D)[1:pz]
-    resid_Y = as.vector(qr.resid(qrW, Y))
-    resid_D = as.vector(qr.resid(qrW, D))
-    ## Computing (co)variance matrices
+  ## centralize W
+  W = scale(W, center=T, scale=F)
+  
+  if(method=="OLS"){
+    
     if(robust){
-      SigmaSqY = sum(resid_Y^2)/(n-1)
-      SigmaSqD = sum(resid_D^2)/(n-1)
-      SigmaYD = sum(resid_Y * resid_D)/(n-1)
-      V.Gamma = SigmaSqY * U[1:pz, 1:pz]
-      V.gamma = SigmaSqD * U[1:pz, 1:pz]
-      C = SigmaYD * U[1:pz, 1:pz]
+      out = TSHT.OLS_hetero(Y, D, W, pz, intercept=intercept)
+      ITT_Y = out$ITT_Y
+      ITT_D = out$ITT_D
+      V.Gamma = out$V.Gamma
+      V.gamma = out$V.gamma
+      C = out$C
     }else{
-      V.Gamma = (t(WUMat)%*%diag(resid_Y^2)%*%WUMat)/n
-      V.gamma = (t(WUMat)%*%diag(resid_D^2)%*%WUMat)/n
-      C = (t(WUMat)%*%diag(resid_Y * resid_D)%*%WUMat)/n
+      out = TSHT.OLS(Y, D, W, pz, intercept=intercept)
+      ITT_Y = out$ITT_Y
+      ITT_D = out$ITT_D
+      SigmaSqY = out$SigmaSqY
+      SigmaSqD = out$SigmaSqD
+      SigmaYD = out$SigmaYD
+      WUMat = out$WUMat
+      V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
+      V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
+      C = SigmaYD * t(WUMat)%*%WUMat / n
     }
-  }else{
-    ## LF estimators
-    robust=FALSE # we only consider homoscedastic setting for LF estimator
-    init_Y = Lasso.init(W, Y)
-    init_D = Lasso.init(W, D)
-    ## residual
-    resid_Y = as.vector(Y - W%*%init_Y)
-    resid_D = as.vector(D - W%*%init_D)
-    ## Debias
-    ITT_Y = rep(NA, pz); ITT_D = rep(NA, pz)
-    U = matrix(NA, nrow=ncol(W), ncol=pz)
-    if(intercept) W_no_intercept = W[,-ncol(W)] else W_no_intercept = W_no_intercept
-    for(i in 1:pz){
-      loading = rep(0, p+as.integer(intercept))
-      loading[i] = 1
-      ITT_Y[i] = GLM_LF(W_no_intercept, Y, loading, intercept.loading=FALSE, intercept=intercept)$prop.est
-      model_D = GLM_LF(W_no_intercept, D, loading=loading, intercept.loading=FALSE, intercept=intercept)
-      ITT_D[i] = model_D$prop.est
-      if(intercept){
-        U[-nrow(U),i] = (model_D$proj)[-1]
-        U[nrow(U),i] = (model_D$proj)[1]
-      }else{
-        U[,i] = model_D$proj
-      }
-    }
-    WUMat = W%*%U
-
-    SigmaSqY = sum(resid_Y^2)/(n-1)
-    SigmaSqD = sum(resid_D^2)/(n-1)
-    SigmaYD = sum(resid_Y * resid_D)/(n-1)
-
-    Temp = t(WUMat)%*%WUMat / n
-    V.Gamma = SigmaSqY * Temp
-    V.gamma = SigmaSqD * Temp
-    C = SigmaYD * Temp
+    
+  }else if(method=="Fast.DeLasso"){
+    
+    out = TSHT.DeLasso(Y, D, W, pz, intercept=intercept)
+    ITT_Y = out$ITT_Y
+    ITT_D = out$ITT_D
+    SigmaSqY = out$SigmaSqY
+    SigmaSqD = out$SigmaSqD
+    SigmaYD = out$SigmaYD
+    WUMat = out$WUMat
+    V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
+    V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
+    C = SigmaYD * t(WUMat)%*%WUMat / n
+    
+  }else if(method=="DeLasso"){
+    
+    out = TSHT.SIHR(Y, D, W, pz, intercept=intercept)
+    ITT_Y = out$ITT_Y
+    ITT_D = out$ITT_D
+    V.Gamma = out$V.Gamma
+    V.gamma = out$V.gamma
+    C = out$C
   }
 
   TSHT.out <- TSHT.Init(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C)
   V0.hat = sort(TSHT.out$VHat)
   ## Construct range [L, U]
   if(is.vector(CI.init)){
-    CI.init.union = t(as.matrix(sort(CI.init)))
+    CI.init.union = matrix(CI.init, ncol=2)
   }else{
     ## current method to select initial [L, U]
     var.beta = 1/n * (diag(V.Gamma)/ITT_D^2 + diag(V.gamma)*ITT_Y^2/ITT_D^4 - 2*diag(C)*ITT_Y/ITT_D^3)
@@ -354,24 +340,35 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
   return(out)
 }
 
-Lasso.init <- function(X, y, lambda = "CV.min", intercept = FALSE) {
-  p <- ncol(X)
-  n <- nrow(X)
-
-  htheta <- if (lambda == "CV") {
-    outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                        intercept = intercept)
-    # Objective : 1/2 * RSS/n + lambda * penalty
-    as.vector(coef(outLas, s = outLas$lambda.1se))
-  } else if (lambda == "CV.min") {
-    outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                        intercept = intercept)
-    # Objective : 1/2 * RSS/n + lambda * penalty
-    as.vector(coef(outLas, s = outLas$lambda.min))
-  }
-  if (intercept == TRUE) {
-    return(htheta)
-  } else {
-    return(htheta[2:(p+1)])
-  }
+TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
+  
+  init_Y = Lasso(W, Y, lambda="CV.min", intercept=intercept)
+  init_D = Lasso(W, D, lambda="CV.min", intercept=intercept)
+  
+  W_int = ifelse(intercept, cbind(1, W), W)
+  resid_Y = as.vector(Y - W_int%*%init_Y)
+  resid_D = as.vector(Y - W_int%*%init_D)
+  
+  loading.mat = matrix(0, nrow=ncol(W), ncol=pz)
+  for(i in 1:pz) loading.mat[i, i] = 1
+  out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
+  out2 = LF(W, D, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
+  ITT_Y = out1$est.debias.vec
+  ITT_D = out2$est.debias.vec
+  U = out2$proj.mat
+  WUMat = W_int%*%U
+  
+  SigmaSqY = sum(resid_Y^2)/n
+  SigmaSqD = sum(resid_D^2)/n
+  SigmaYD = sum(resid_Y * resid_D)/n
+  Temp = t(WUMat)%*%WUMat / n
+  V.Gamma = SigmaSqY * Temp
+  V.gamma = SigmaSqD * Temp
+  C = SigmaYD * Temp
+  
+  return(list(ITT_Y = ITT_Y,
+              ITT_D = ITT_D,
+              V.Gamma = V.Gamma,
+              V.gamma = V.gamma,
+              C = C))
 }
