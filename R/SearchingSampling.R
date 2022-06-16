@@ -7,15 +7,16 @@
 #' @param Z A matrix of instruments.
 #' @param X A matrix of exogenous covariates.
 #' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
-#' @param lowd If \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})
+#' @param method 
 #' @param robust If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
+#' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
+#' @param alpha Significance level (default=0.05)
 #' @param CI.init Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
 #' @param a Grid size for constructing beta grids (default=0.6)
-#' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
-#' @param rho Initial value constructed for sampling method (default=\code{NULL})
-#' @param M Sampling times. (default = 1000)
-#' @param prop Proportion of intervals kept when sampling. (default=0.1)
-#' @param filtering Filtering sampling or not (default=\code{TRUE})
+#' @param rho Initial value constructed for sampling method (default=\code{NULL}). It works only for Sampling method.
+#' @param M Sampling times (default = 1000). It works only for Sampling method.
+#' @param prop Proportion of intervals kept when sampling (default=0.1). It works only for Sampling method.
+#' @param filtering Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.
 #'
 #' @return
 #' \item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
@@ -39,10 +40,8 @@
 
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               method=c("OLS","DeLasso","Fast.DeLasso"),
-                              robust=TRUE, 
-                              Sampling=TRUE,
-                              CI.init = NULL,
-                              a=0.6, alpha=0.05,
+                              robust=TRUE, Sampling=TRUE, alpha=0.05,
+                              CI.init = NULL, a=0.6, 
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
   method = match.arg(method)
   if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
@@ -124,13 +123,13 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
   if(Sampling){
     ## Sampling Method
     CI.sampling = Searching.CI.sampling(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet=V0.hat,
-                                        beta.grid = beta.grid, rho=rho, M=M, prop=prop, filtering=filtering)
+                                        beta.grid = beta.grid, alpha=alpha, rho=rho, M=M, prop=prop, filtering=filtering)
     CI=CI.sampling$CI
     rule=CI.sampling$rule
   }else{
     ## Searching Method
     CI.searching = Searching.CI(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet = V0.hat,
-                                beta.grid = beta.grid)
+                                beta.grid = beta.grid, alpha=alpha)
     CI=CI.searching$CI
     rule=CI.searching$rule
   }
@@ -185,13 +184,13 @@ grid.CI <- function(CI.matrix, grid.size){
   return(grid.seq)
 }
 
-Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.grid){
+Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.grid, alpha=0.05){
   threshold.size = length(InitiSet)/2
   n.beta = length(beta.grid)
   pz = dim(V.Gamma)[1]
 
   ## new rho method
-  Tn = qnorm(1-0.05/(2*pz))
+  Tn = qnorm(1-alpha/(2*pz))
 
   ## valid grid
   valid.grid = rep(NA, n.beta)
@@ -216,13 +215,13 @@ Searching.CI <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.gr
 }
 
 Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet,
-                                  beta.grid, rho=NULL, M=1000, prop=0.1, filtering=TRUE){
+                                  beta.grid, alpha=0.05, rho=NULL, M=1000, prop=0.1, filtering=TRUE){
   threshold.size = length(InitiSet)/2
   n.beta = length(beta.grid)
   pz = dim(V.Gamma)[1]
 
   ## new rho method
-  Tn = qnorm(1-0.05/(2*pz))
+  Tn = qnorm(1-alpha/(2*pz))
 
   ## Covariance Matrix
   Cov1 = cbind(V.Gamma/n, C/n)
