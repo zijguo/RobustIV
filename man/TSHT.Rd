@@ -11,84 +11,56 @@ TSHT(
   X,
   intercept = TRUE,
   alpha = 0.05,
-  boot.SHat = FALSE,
-  tuning = 2.01,
   method = "OLS",
   voting = "MaxClique",
   robust = FALSE
 )
 }
 \arguments{
-\item{Y}{continuous and non-missing, n by 1 numeric outcome vector.}
+\item{Y}{A continuous vector of outcomes.}
 
-\item{D}{continuous or discrete, non-missing, n by 1 numeric treatment vector.}
+\item{D}{A continuous vector of endogenous variables.}
 
-\item{Z}{continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments..}
+\item{Z}{A matrix of instruments.}
 
-\item{X}{optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.}
+\item{X}{A matrix of exogenous covariates.}
 
-\item{intercept}{a boolean scalar indicating to include the intercept or not, with default \code{TRUE}.}
+\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
 
-\item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
+\item{alpha}{The significance level for the confidence interval. (default = 0.05)}
 
-\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default \code{FALSE}. (Not working when robust = \code{TRUE})}
+\item{method}{The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "OLS")}
 
-\item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
+\item{voting}{The voting option used to estimate valid IVs. 'MP' stands for majority and plurality voting, 'MaxClique' stands for finding maximal clique in the IV voting matrix, and 'Conservative' stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= 'MaxClique').}
 
-\item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. Default by "OLS".}
-
-\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
-
-\item{robust}{a boolean scalar indicating to assume heteroskedasticity errors, with default TRUE. If robust = TRUE, only 'OLS' method can be used.}
+\item{robust}{If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors.  When robust = \code{TRUE}, only 'OLS' can be input to \code{method}. (default = \code{FALSE})}
 }
 \value{
 \code{TSHT} returns an object of class "TSHT".
-    An object class "TSHT" is a list containing the following components
-    \item{\code{betaHat}}{a numeric scalar denoting the estimate of treatment effect.}
-    \item{\code{beta.sdHat}}{a numeric scalar denoting the estimated standard deviation of betaHat.}
-    \item{\code{ci}}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-    \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-    \item{\code{VHat}}{a numeric vector denoting the set of valid and relevant IVs.}
-    \item{\code{voting.mat}}{a numeric matrix denoting the votes among the candidates of valid and relevant IVs with components 0 and 1.}
-    \item{\code{check}}{True or False indicating whether the majority rule test is passed or not.}
-    \item{\code{beta.clique}}{a numeric matrix where each row represents the estiamted betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
-    \item{\code{beta.sd.clique}}{a numeric matrix where each row represents the estimated variance of betahat corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-    \item{\code{CI.clique}}{a numeric matrix where each row represents the CI corresponding to each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-    \item{\code{max.clique}}{a numeric matrix denoting maximum cliques of voted as valid and relevant IVs. Only returns when \code{voting} is \code{'MaxClique'}}
+    An object class "TSHT" is a list containing the following components:
+    \item{\code{betaHat}}{The estimate of treatment effect.}
+    \item{\code{beta.sdHat}}{The estimated standard deviation of \code{betaHat}.}
+    \item{\code{ci}}{The 1-alpha confidence intervals for \code{betaHat}.}
+    \item{\code{SHat}}{The set of relevant IVs.}
+    \item{\code{VHat}}{The set of valid and relevant IVs.}
+    \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
+    \item{\code{check}}{Whether the majority rule test is passed or not.}
+    \item{\code{beta.clique}}{The estimates of treatment effect from each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
+    \item{\code{beta.sd.clique}}{The estimated standard deviation of \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+    \item{\code{CI.clique}}{The 1-alpha confidence intervals for \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+    \item{\code{max.clique}}{The maximum cliques of voted as valid IVs. Only returns when \code{voting} is \code{'MaxClique'}}
 }
 \description{
-Two-Stage Hard Thresholding main function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
 }
 \examples{
 \dontrun{
-### Working Low Dimensional Example ###
-library(RobustIV)
-library(MASS)
-n = 500; L = 10; s = 3
-alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,L))
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
-Z = matrix(rnorm(n*L),n,L)
-epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D = 0.5 + Z \%*\% gamma + epsilon[,1]
-Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
-TSHT(Y,D,Z)
-TSHT(Y,D,Z,max_clique=TRUE)
-
-
-### Working High Dimensional Example ###
-library(Matrix)
-library(glmnet)
-library(flare)
-library(MASS)
-n = 500; L = 600; s = 3; nRelevant = 10
-alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
-Z = matrix(rnorm(n*L),n,L)
-epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D =  0.5 + Z \%*\% gamma + epsilon[,1]
-Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
-TSHT(Y,D,Z,method="DeLasso")
-TSHT(Y,D,Z,method="DeLasso",max_clique=TRUE)
+Y <- mroz[,"lwage"]
+D <- mroz[,"educ"]
+Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+X <- mroz[,"age"]
+TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
+summary(TSHT.model)
 }
 
 

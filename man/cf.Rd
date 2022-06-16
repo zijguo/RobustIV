@@ -4,35 +4,39 @@
 \alias{cf}
 \title{Control-Function}
 \usage{
-cf(outcome.formula, treatment.formula)
+cf(formula, d1 = NULL, d2 = NULL)
 }
 \arguments{
-\item{outcome.formula}{formula specification(s) of the regression relationship between outcome, covariates and the endogeneity variables, such as \code{Y ~ X + D + g_2(D) + ... + g_k(D)}.}
+\item{formula}{a formula describing the model to be fitted. For example, the formula \code{Y ~ D + I(D^2)+X|Z+X} describes the model where
+\eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
+and
+\eqn{D = \gamma_0 + Z\gamma_1 + X\psi + v}.
+Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the exogenous covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
+the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.}
 
-\item{treatment.formula}{formula specification(s) of the regression relationship between endogeneity variables, covariates and the instrumental variables, such as \code{D ~ X + Z + h_2(Z) + ... + h_k(Z)}.}
+\item{d1}{a treatment value for calculating causal effect from \code{d2} to \code{d1}.}
+
+\item{d2}{a treatment value for calculating causal effect from \code{d2} to \code{d1}.}
 }
 \value{
-\item{\code{coefficients}}{scalar numeric value: the estimate of the treatment effect }
-   \item{\code{vcov}}{numeric matrix: estimated covariance matrix of coefficients}
+\code{cf} returns an object of class "cf".
+    An object class "cf" is a list containing the following components:
+   \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
+   \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
+   \item{\code{CausalEffect}}{The causal effect of increasing endogenous variable from \code{d2} to \code{d1}. If one of \code{d2} or \code{d1} is \code{NULL}, it returns \code{NULL}}
 }
 \description{
-This function implements the control function method for estimation and inference of nonlinear treatment effects as developed in Guo and Small (2016)
+Implement the control function method for estimation and inference of nonlinear treatment effects as developed in Guo and Small (2016).
 }
 \examples{
-
-### Generate the data
-library(MASS)
-library(RobustIV)
-n <- 10000
-mu <- rep(0,2); V <- cbind(c(1,0.5),c(0.5,1))
-X <- rnorm(n); Z <- rnorm(n)
-err <- mvrnorm(n,mu=mu,Sigma = V)
-u1 <- err[,1]; v2 <- err[,2]
-D <- 1+X/8+Z/3+Z^2/8+v2
-Y <- 1+X+10*D +10*D^2+u1
-
-### Implement the control function method
-cf(Y~X+D+I(D^2),D~X+Z+I(Z^2))
+\dontrun{
+Y <- mroz[,"lwage"]
+D <- mroz[,"educ"]
+Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
+X <- as.matrix(mroz[,c("exper","expersq","age")])
+cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D)+1,(median(D)+1)^2),d2 = c(median(D),median(D)^2))
+summary(cf.model)
+}
 
 
 }

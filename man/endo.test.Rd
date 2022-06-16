@@ -11,64 +11,56 @@ endo.test(
   X,
   intercept = TRUE,
   alpha = 0.05,
-  boot.SHat = FALSE,
-  tuning = 2.01,
   method = "DeLasso",
   invalid = TRUE,
   voting = "MaxClique"
 )
 }
 \arguments{
-\item{Y}{continuous and non-missing, n by 1 numeric outcome vector.}
+\item{Y}{A continuous vector of outcomes.}
 
-\item{D}{continuous or discrete, non-missing, n by 1 numeric treatment vector.}
+\item{D}{A continuousvector of endogenous variables.}
 
-\item{Z}{continuous or discrete, non-missing, n by p_z numeric instrument matrix, containing p_z instruments.}
+\item{Z}{A matrix of instruments.}
 
-\item{X}{optional,continuous or discrete, n by p_x numeric covariate matrix, containing p_z covariates.}
+\item{X}{A matrix of exogenous covariates.}
 
-\item{intercept}{a boolean scalar indicating to include the intercept or not, with default TRUE.}
+\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
 
-\item{alpha}{a numeric scalar value between 0 and 1 indicating the significance level for the confidence interval, with default 0.05.}
+\item{alpha}{The significance level for the confidence interval. (default = 0.05)}
 
-\item{boot.SHat}{a boolean scalar indicating to implement bootstrap to get threshold for Shat, with default FALSE.}
+\item{method}{The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "DeLasso")}
 
-\item{tuning}{a numeric scalar value tuning parameter for TSHT greater 2, with default 2.01.}
+\item{invalid}{If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = TRUE)}
 
-\item{method}{a character scalar declaring the method used to estimate the inputs in TSHT, "OLS" works for ordinary least square and "DeLasso" works for high dimension. (default = "DeLasso")}
-
-\item{invalid}{a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE)}
-
-\item{voting}{a character scalar declaring the voting option used to estimate Vhat, 'MP' works for majority and plurality voting, 'MaxClique' works for finding maximal clique in the IV voting matrix, and 'Conservative' works for conservative voting procedure, with default MaxClique.}
+\item{voting}{The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')}
 }
 \value{
-\item{\code{Q}}{numeric value : our endogeneity test statistic.}
-   \item{\code{Sigma12}}{numeric value : estimated covaraince.}
-   \item{\code{VHat}}{numeric vector : the estimated set of relevant and vaild IVs.}
+\code{endo.test} returns an object of class "endotest".
+    An object class "endotest" is a list containing the following components:
+   \item{\code{Q}}{Endogeneity test statistic.}
+   \item{\code{Sigma12}}{Estimated covaraince.}
+   \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
+   \item{\code{alpha}}{The significance level.}
 }
 \description{
-Endogneity test function, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+Conduct the endogeneity test in high-dimensional linear models in the presence of potentially invalid instrumental variables.
 }
 \examples{
-
-
-
-library(MASS)
-library(RobustIV)
-
-## Generate the data
-n = 300; L = 400; s = 3; nRelevant = 10
-alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
+\dontrun{
+n = 500; L = 600; s = 3; k = 10; px = 10;
+alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
+phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
 epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
 Z = matrix(rnorm(n*L),n,L)
-epsilon = mvrnorm(n,rep(0,2),epsilonSigma)
-D =  0.5 + Z \%*\% gamma + epsilon[,1]
-Y = -0.5 + Z \%*\% alpha + D * beta + epsilon[,2]
-
-## Implement the endogeneity test
-
-endo.test(Y,D,Z)
-endo.test(Y,D,Z,max_clique = TRUE)
+X = matrix(rnorm(n*px),n,px)
+epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
+D =  0.5 + Z \%*\% gamma + X \%*\% psi + epsilon[,1]
+Y = -0.5 + Z \%*\% alpha + D * beta + X \%*\% phi + epsilon[,2]
+TSHT(Y,D,Z,X, method = "DeLasso")
+endo.test.model <- endo.test(Y,D,Z,X)
+summary(endo.test.model)
+}
 
 
 

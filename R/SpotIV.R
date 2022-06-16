@@ -1,21 +1,23 @@
 #' @title SpotIV method for causal inference in nonlinear outcome models
-#' @description Causal inference in nonlinear outcome model with possibly invalid IVs under the majority rule. The parallel computation depends on R packages "foreach" and "doParallel".
-#' @param Y continuous or discrete and non-missing, n by 1 numeric outcome vector.
-#' @param D continuous and non-missing, n by 1 numeric treatment vector.
-#' @param Z continuous or discrete, non-missing, n by pz numeric instrument matrix, containing pz instruments.
-#' @param X continuous or discrete, n by px numeric baseline covariates.
-#' @param bs.Niter a positive integer indicating the number of bootstrap resampling for computing the confidence interval.
-#' @param M an integer 1<=M<=3, the dimension of indices in the outcome model. Default is 2.
-#' @param M.est True or False, whether estimate M based on BIC. Default is True.
-#' @param invalid a boolean scalar asking to assume that there are some invalid instrument variables with TRUE/FALSE (default = TRUE).
-#' @param intercept a boolean scalar indicating to include the intercept or not. Default is TRUE.
-#' @param d1 a scalar for computing CATE(d1,d2|w0).
-#' @param d2 a scalar for computing CATE(d1,d2|w0).
-#' @param w0  a (pz+px) by 1 vector for computing CATE(d1,d2|w0).
+#' @description Perform causal inference in semi-parametric outcome model with possibly invalid IVs under the majority rule using SpotIV method.
+#' @param Y A numeric vector of outcomes.
+#' @param D A continuous vector of endogenous variables.
+#' @param Z A matrix of instruments.
+#' @param X A matrix of exogenous covariates.
+#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
+#' @param M The dimension of indices in the outcome model, from 1 to 3. Default is 2.
+#' @param M.est True or False, whether estimate M based on BIC. (default = TRUE)
+#' @param invalid If TRUE, the method is robust to the presence of possibly invalid IVs; If FALSE, the method assumes all IVs to be valid. (default = TRUE)
+#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param d1 a treatment value for computing CATE(d1,d2|w0).
+#' @param d2 a treatment value for computing CATE(d1,d2|w0).
+#' @param w0  a value of measured covariates and instruments for computing CATE(d1,d2|w0).
 #' @param bw  a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
-#' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). Default is False.
+#' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). (default = FALSE)
 
 #' @return
+#'     \code{ProbitControl} returns an object of class "SpotIV".
+#'     An object class "SpotIV" is a list containing the following components:
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
@@ -32,30 +34,15 @@
 
 #' @examples
 #' \dontrun{
-#' ### Working Low Dimensional Example ###
-#' library(mvtnorm)
-#' library(MASS)
-#' library(Matrix)
-#' n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); x0 = c(0.1,0.2)
-#' Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
-#' gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
-#' cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
-#' noise.vec<-rmvnorm(n, rep(0,2), cov.noise)
-#' v.vec<-noise.vec[,1]
-#' X<-matrix(runif(n*2), ncol=2)
-#' D = 0.5+Z %*% gam + v.vec
-#' pi0 <- c(rep(0, s), 0.8, 0.4)
-#' beta0 <- 0.25
-#' u.vec<- noise.vec[,2]
-#' Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
-#' u1.r<-rnorm(2000,0,sd=1)
-#' cace0 <- mean((as.numeric(-0.5+d1 * beta0 + z0 %*% pi0)+ u1.r )>=0) -
-#' mean((as.numeric(-0.5+d2 * beta0 + z0 %*% pi0) + u1.r)>=0)
-#' library(foreach)
-#' library(doParallel)
-#' registerDoParallel(4)
-#' system.time(re1<-SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=T))
-#' system.time(re2<-SpotIV(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, parallel=F))
+#' Y <- mroz[,"lwage"]
+#' D <- mroz[,"educ"]
+#' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+#' X <- mroz[,"age"]
+#' Y0 <- as.numeric((Y>median(Y)))
+#' d2 = median(D); d1 = d2+1;
+#' w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
+#' SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
+#' summary(SpotIV.model)
 #'}
 #'
 #'
@@ -188,10 +175,43 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
     }
     cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   }
+  VHat <- as.numeric(VHat)
+  if (!is.null(colnames(Z))) {
+    SHat = colnames(Z)[SHat]
+    VHat = colnames(Z)[VHat]
+  }
   SpotIV.model <- list(betaHat = beta.hat, cateHat=cace.hat, cate.sdHat= cace.sd,
-                       SHat=SHat, VHat = as.numeric(VHat), Maj.pass=Maj.pass)
-  structure(SpotIV.model, out = "SpotIV")
+                       SHat=SHat, VHat = VHat, Maj.pass=Maj.pass)
+  class(SpotIV.model) <- "SpotIV"
   return(SpotIV.model)
+}
+#' Summary of SpotIV
+#'
+#' @param object SpotIV object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
+summary.SpotIV <- function(object,...){
+  return(object)
+}
+
+#' Summary of SpotIV
+#'
+#' @param x SpotIV object
+#' @param ...
+#' @keywords internal
+#' @return
+#' @export
+print.SpotIV <- function(x,...){
+  SpotIV <- x
+  cat("\nValid Instruments:", SpotIV$VHat, "\n");
+  cat("\nRelevant Instruments:", SpotIV$SHat,"\n","\nThus, Majority rule",ifelse(SpotIV$Maj.pass,"holds.","does not hold."), "\n");
+  cat(rep("_", 30), "\n")
+  cat("\nBetaHat:",SpotIV$betaHat,"\n");
+  cat("\nCATEHat:",SpotIV$cateHat,"\n");
+  ci <- c(SpotIV$cateHat-qnorm(0.975)*SpotIV$cate.sdHat,SpotIV$cateHat+qnorm(0.975)*SpotIV$cate.sdHat)
+  cat("\nConfidence Interval of CATEHat: [", ci[1], ",", ci[2], "]", "\n", sep = '');
 }
 
 SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){

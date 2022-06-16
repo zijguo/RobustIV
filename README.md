@@ -5,251 +5,236 @@ This package provides functions for robust inference in the presence of potentia
 # Installation
 The package can be installed from Github using the following code:
 ```R
-# install.packages("devtools")
-library(devtools)
 devtools::install_github("https://github.com/zijguo/RobustIV")
 ```
 
-# Examples
+# Low-dimensional Examples
 
-First, we consider the linear model.
+We use Mroz (1987) data to estimate the effect of education on log earnings. Here, the outcome Y is log earnings (lwage), the exposure D is years of schooling (educ), the candidates of instrument Z are father’s education (fatheduc), mother’s education (motheduc), husband’s education (huseduc), actual labor market experience (exper), its square (expersq), and the exogenous covariate X is age (age). We assume Y is a linear model of D,Z, and X, and D is a linear model of Z and X. 
 
 ## TSHT
-### Low-dimensional setting
-When dimension is low, we implement TSHT with OLS reduced-form estimator. 
-```R
-### generate low dimensional data ###
-n = 500; L = 10; s = 3
-alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,L))
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
-Z = matrix(rnorm(n*L),n,L)
-epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
-D = 0.5 + Z %*% gamma + epsilon[,1]
-Y = -0.5 + Z %*% alpha + D * beta + epsilon[,2]
 
-### basic usage ###
-RobustIV::TSHT(Y,D,Z)
-RobustIV::TSHT(Y,D,Z,voting = 'Conservative')
-RobustIV::TSHT(Y,D,Z,boot.SHat = TRUE,voting = 'Conservative')
+```R
+> data(mroz)
+> Y <- mroz[,"lwage"]
+> D <- mroz[,"educ"]
+> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+> X <- mroz[,"age"]
+> TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
+> summary(TSHT.model)
+
+Valid Instruments: motheduc fatheduc huseduc 
+
+Relevant Instruments: motheduc fatheduc huseduc 
+ 
+Thus, Majority rule holds 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+BetaHat: 0.08029083 
+
+Confidence Interval of BetaHat: [0.03744511,0.1231365]
 
 ```
-
-### High-dimensional setting
-When dimension is high, we use Debiased lasso estimator as reduced-form estimator.
-```R
-### generate high dimensional data ###
-n = 500; L = 600; s = 3; nRelevant = 10
-alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,nRelevant),rep(0,L-nRelevant))
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
-Z = matrix(rnorm(n*L),n,L)
-epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
-D =  0.5 + Z %*% gamma + epsilon[,1]
-Y = -0.5 + Z %*% alpha + D * beta + epsilon[,2]
-
-### basic usage with debiased lasso ###
-RobustIV::TSHT(Y,D,Z,method="DeLasso")
-
-### usage with debiased lasso and voting option ###
-RobustIV::TSHT(Y,D,Z,method="DeLasso",voting = 'MP')
-RobustIV::TSHT(Y,D,Z,method="DeLasso",voting = 'Conservative')
-
-### usage with debiased lasso and bootstrap threshold option ###
-RobustIV::TSHT(Y,D,Z,method="DeLasso",boot.SHat = TRUE)
-```
-
 ### Reference
 Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting](https://doi.org/10.1111/rssb.12275), J. R. Stat. Soc. B, 80: 793-815. 
 
-## Searching-Sampling method
-We use Searching-Sampling method to resolve post-selection problem.
+## Searching-Sampling
+
 ```R
-### Define covariance matrix ###
-A1gen<-function(rho,p){
-  A1=matrix(0,p,p)
-  for(i in 1:p){
-    for(j in 1:p){
-      A1[i,j]<-rho^(abs(i-j))
-    }
-  }
-  A1
-}
-n = 1000; IV.str=0.5; VIO.str=0.4; pi.value<-IV.str*VIO.str
-beta = 1;
-px <- 10; L = 10; p=L+px
-phi<-rep(0,px); psi<-rep(0,px); phi[1:px]<-(1/px)*seq(1,px)+0.5; psi[1:px]<-(1/px)*seq(1,px)+1
-rho=0.5; Cov<-(A1gen(rho,p))
+> Y <- mroz[,"lwage"]
+> D <- mroz[,"educ"]
+> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+> X <- mroz[,"age"]
+> Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
+> summary(Searching.model)
 
-### Generate a setting ###
-L = 10; s1 = 2; s2 = 2; s=s1+s2
-alpha = c(rep(0,L-s1-s2),rep(pi.value,s1),-seq(1,s2)/2); gamma=rep(IV.str,L)
+Initial set of Valid Instruments: motheduc fatheduc huseduc 
 
-W<-MASS::mvrnorm(n, rep(0, p), Cov)
-Z=W[,1:L]
-X=W[,(L+1):p]
-epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
-epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
-D = 0.5 + Z %*% gamma+ X%*% psi + epsilon[,1]
-Y = -0.5 + Z %*% alpha + D * beta + X%*%phi+ epsilon[,2]
-### Using Searching method ###
-RobustIV::Searching.Sampling(Y,D,Z,X,Sampling=FALSE)
-### Using Searching method with voting option ###
-RobustIV::Searching.Sampling(Y,D,Z,X,Sampling=FALSE,voting = 'Conservative')
-### Using Sampling method and specifying sampling threshold ### 
-RobustIV::Searching.Sampling(Y,D,Z,X,alpha0 = 0.01,boot.SHat = TRUE,voting = 'Conservative')
+Relevant Instruments: motheduc fatheduc huseduc 
+ 
+Thus, Majority rule holds 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+Confidence Interval of BetaHat: [-0.2831715,0.2442571]
+
+> SS.model <- SearchingSampling(Y,D,Z,X)
+> summary(SS.model)
+
+Initial set of Valid Instruments: motheduc fatheduc huseduc 
+
+Relevant Instruments: motheduc fatheduc huseduc 
+ 
+Thus, Majority rule holds 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+Confidence Interval of BetaHat: [-0.09857149,0.1651428]
 ```
-
 ### Reference
 Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
 
-## Endogeneity test in high dimension
-It uses same reduced form estimator as TSHT in each setting.
-
-### High-dimensional setting
-```R
-### Define covariance structure of Z and X ###
-ar1_cor <- function(p, rho) {
-  A1=matrix(0,p,p)
-  for(i in 1:p){
-    for(j in 1:p){
-      A1[i,j]<-rho^(abs(i-j))
-    }
-  }
-  A1
-}
-
-
-### generate high-dimensional data ### 
-n = 200
-rho1 = 0.3
-Const = 0.5
-s = 10; nRelevant = 7
-pz <- 100; px <- 150; p <- pz+px
-Lambda <- ar1_cor(p,0.5)
-S <- seq(1,nRelevant)
-I <- seq(1,pz) # candidates of instrument variables
-beta <- 1
-phi <- c(seq(0.6,1.5,length.out=s),rep(0,px-s))
-psi <- c(seq(1.1,2.0,length.out=s),rep(0,px-s))
-sig1 <- 1.5; sig2 <- 1.5 
-epsilonSigma = matrix(c(sig1,0.5,0.5,sig2),2,2) 
-gamma = Const*c(rep(1,nRelevant-1),rho1,rep(0,pz-nRelevant))
-W <- MASS::mvrnorm(n,mu=rep(0,p),Sigma = Lambda)
-Z <- W[,1:pz]; X <- W[,(pz+1):p]
-epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
-D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
-Y <- -1 + D*beta + X%*%phi + epsilon[,2]
-
-### usage with debaised lasso ###
-RobustIV::endo.test(Y,D,Z,X,method = "DeLasso",voting = 'Conservative')
-
-```
-
-### Low-dimensional setting
-If you need, you can also implement the method in low dimensional setting.
-```R
-### Generate low-dimensional data ###
-n <- 1000; pz <- 9; px <- 5;
-p <- pz+px
-s = 10; nRelevant = 7
-beta <- 1
-phi <- seq(0.6,1.0,length.out=px)
-psi <- seq(1.1,1.5,length.out=px)
-gamma = c(rep(1,nRelevant),rep(0,pz-nRelevant))
-epsilonSigma = matrix(c(1.5,0.5,0.5,1.5),2,2)
-W <- matrix(rnorm(n*p),n,p)
-Z <- W[,1:pz]; X <- W[,(pz+1):p]
-epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
-D <- 1 + Z%*%gamma + X%*%psi + epsilon[,1]
-Y <- -1 + D*beta + X%*%phi + epsilon[,2]
-
-### basic usage ###
-RobustIV::endo.test(Y,D,Z,X,method ="OLS",voting = 'MP')
-```
-
-### Reference
-Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Testing endogeneity with high dimensional covariates](https://www.sciencedirect.com/science/article/pii/S0304407618301325), Journal of Econometrics, Elsevier, vol. 207(1), pages 175-187.
 
 ## Control function method
 We use the control function method in additive model with continuous outcome and valid IVs.
 ```R
-### control function method ###
+> Y <- mroz[,"lwage"]
+> D <- mroz[,"educ"]
+> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
+> X <- as.matrix(mroz[,c("exper","expersq","age")])
+> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D)+1,(median(D)+1)^2),d2 = c(median(D),median(D)^2))
+> summary(cf.model)
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-### Generate a setting ###
-n <- 10000
-mu <- rep(0,2); V <- cbind(c(1,0.5),c(0.5,1))
-X <- rnorm(n); Z <- rnorm(n)
-err <- MASS::mvrnorm(n,mu=mu,Sigma = V)
-u1 <- err[,1]; v2 <- err[,2]
-D <- 1+X/8+Z/3+Z^2/8+v2
-Y <- 1+X+10*D +10*D^2+u1
+Coefficients of Control Function Estimators:
 
-### Implement the control function method ###
-RobustIV::cf(Y~X+D+I(D^2),D~X+Z+I(Z^2))
+              Estimate    Std.Err t value Pr(>|t|)    
+(Intercept)  1.2573907  0.7871438   1.597 0.055457 .  
+D           -0.1434395  0.1102058   1.302 0.096884 .  
+I(D^2)       0.0086426  0.0041004   2.108 0.017817 *  
+Xexper       0.0438690  0.0131574   3.334 0.000465 ***
+Xexpersq    -0.0008713  0.0003984   2.187 0.014631 *  
+Xage        -0.0011636  0.0048634   0.239 0.405511    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Causal effect from D = 12 to 13 :  0.07262563 
 
-### pretest using control function method ###
-RobustIV::pretest(Y~X+D+I(D^2),D~X+Z+I(Z^2))
+> pretest.model <- pretest(Y~D+I(D^2)+X|Z+I(Z^2)+X)
+> summary(pretest.model)
+ 
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
+Level 0.05 Pretest estimator is Control function estimator. 
+
+Hausman Statistic :  1.313563 
+
+P value =  0.2517505 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+Coefficients of Control Function Estimators:
+
+              Estimate    Std.Err t value Pr(>|t|)    
+(Intercept)  1.2573907  0.7871438   1.597 0.055457 .  
+D           -0.1434395  0.1102058   1.302 0.096884 .  
+I(D^2)       0.0086426  0.0041004   2.108 0.017817 *  
+Xexper       0.0438690  0.0131574   3.334 0.000465 ***
+Xexpersq    -0.0008713  0.0003984   2.187 0.014631 *  
+Xage        -0.0011636  0.0048634   0.239 0.405511    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 ```
 
 ### References
 Guo, Z. and D. S. Small (2016), [Control function instrumental variable estimation of nonlinear
 causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), The Journal of Machine Learning Research 17(1), 3448–3482.
 
-## SpotIV
-We use the SpotIV method in semiparametric model with valid IV or possibly invalid IV assumption. This method can take a lot of time when the dimensions are a little bigger. 
+
+## SpotIV and ProbitControl
 
 ```R
-### Generate a setting ###
-m = 500; J = 5; d1=-1; d2=1;
-z0 = rep(0,J); x0 = c(0.1,0.2);
-Z <- matrix(rnorm(m * J, 0, 1) , ncol = J, nrow = m)
-gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
-cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
-noise.vec<-MASS::mvrnorm(m, rep(0,2), cov.noise)
-v.vec<-noise.vec[,1]
-X<-matrix(runif(m*2), ncol=2)
-psi0 <- c(0.1,0.3)
-D = 0.5+Z %*% gam + X%*%psi0+v.vec
-phi0 <- c(0.2,0.1)
-beta0 <- 0.25
-u.vec<- noise.vec[,2]
-Y = (-0.5 + X%*%phi0 + D * beta0 + u.vec>=0)
+> Y <- mroz[,"lwage"]
+> D <- mroz[,"educ"]
+> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+> X <- mroz[,"age"]
+> Y0 <- as.numeric((Y>median(Y)))
+> d2 = median(D); d1 = d2+1;
+> w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
+> SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
+> summary(SpotIV.model)
 
-### Approximate CATE ###
+Valid Instruments: motheduc fatheduc huseduc 
 
-u1.r<-rnorm(20000,0,sd=1)
-cace0 <- mean((as.numeric(-0.5+d1 * beta0 + x0 %*% psi0)+ u1.r )>=0) -
-  mean((as.numeric(-0.5+d2 * beta0 + x0 %*% psi0) + u1.r)>=0)
-cace0 
+Relevant Instruments: motheduc fatheduc huseduc 
+ 
+Thus, Majority rule holds 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-### Implement SpotIV method assuming all IVs are valid ###
-RobustIV::SpotIV(Y=Y, D=D, Z=Z, X=X, d1 = d1, d2 = d2, w0 = c(z0,x0),invalid = FALSE ,parallel=FALSE)
-### Implement SpotIV method assuming there is an invalid IV ###
-RobustIV::SpotIV(Y=Y, D=D, Z=Z, X=X, d1 = d1, d2 = d2, w0 = c(z0,x0),invalid = TRUE ,parallel=FALSE)
+BetaHat: 0.8791451 
+
+CATEHat: 0.1298192 
+
+Confidence Interval of CATEHat: [-0.6774876,0.9371261]
 ```
-## Control function method for probit model
-Especially, we can use the method for probit model assumption.
+
 ```R
-### Generate a setting ###
-   n = 500; J = 5; s = 3; d1=-1; d2=1; z0=c(rep(0, J-1),0.1); 
-   Z <- matrix(rnorm(n * J, 0, 1) , ncol = J, nrow = n)
-   gam <- c(rep(0.8, floor(J / 2)), rep(-0.8, J - floor(J / 2)))
-   cov.noise<-matrix(c(1,0.25, 0.25, 1),ncol=2)
-   noise.vec<-MASS::mvrnorm(n, rep(0,2), cov.noise)
-   v.vec<-noise.vec[,1]
-   D = 0.5+Z %*% gam + v.vec
-   pi0 <- c(rep(0, s), 0.8, 0.4)
-   beta0 <- 0.25
-   u.vec<- noise.vec[,2]
-   Y = (-0.5 + Z %*% pi0 + D * beta0 + u.vec>=0)
+> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
+> summary(Probit.model)
 
-### Implement SpotIV method when we assume probit model with valid IV assumption ###
-RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='valid', intercept=TRUE)
+Valid Instruments: motheduc fatheduc huseduc 
 
-### Implement SpotIV method when we assume probit model with possibly invalid IV assumption and majority rule ###
-RobustIV::ProbitControl(Y=Y, D=D, Z=Z, X=X, bs.Niter = 40, d1 = d1, d2 = d2, w0 = z0, method='majority', intercept=TRUE)
+Relevant Instruments: motheduc fatheduc huseduc 
+ 
+Thus, Majority rule holds 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
+BetaHat: 0.2118909 
+
+CATEHat: 0.08435024 
+
+Confidence Interval of CATEHat: [0.01999327,0.1487072]
 ```
 
 ### Reference
 Li, S., Guo, Z. (2020), [Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables](https://arxiv.org/abs/2010.09922), Preprint arXiv:2010.09922.
+
+# High-dimensional examples with simulation
+In this section, we consider the following linear models.
+
+Y = D\beta + Z\alpha + X\phi +u 
+
+D = Z\gamma + X\psi + v
+
+## TSHT
+
+```R
+> set.seed(1)
+> n = 500; L = 600; s = 3; k = 10; px = 10;
+> alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
+> phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
+> epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
+> Z = matrix(rnorm(n*L),n,L)
+> X = matrix(rnorm(n*px),n,px)
+> epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
+> D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
+> Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
+> summary(TSHT(Y,D,Z,X, method = "DeLasso"))
+
+Valid Instruments: 4 5 6 7 8 9 10 
+
+Relevant Instruments: 1 2 3 4 5 6 7 8 9 10 
+ 
+Thus, Majority rule holds. 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+BetaHat: 0.9893991 
+
+Confidence Interval of BetaHat: [0.9582907,1.020508]
+
+```
+
+## Endogeneity test in high dimension
+It uses same reduced form estimator as TSHT in each setting.
+
+
+```R
+> set.seed(1)
+> n = 500; L = 600; s = 3; k = 10; px = 10;
+> alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
+> phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
+> epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
+> Z = matrix(rnorm(n*L),n,L)
+> X = matrix(rnorm(n*px),n,px)
+> epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
+> D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
+> Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
+> endo.test.model <- endo.test(Y,D,Z,X)
+> summary(endo.test.model)
+
+Valid Instruments: 4 5 6 7 8 9 10 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Test statistics Q =  13.47976 
+'H0 : Sigma12 = 0' is rejected at the significance level 0.05 .
+P-value =  0 
+Estimated covariance: 0.7690532 
+```
+
+### Reference
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Testing endogeneity with high dimensional covariates](https://www.sciencedirect.com/science/article/pii/S0304407618301325), Journal of Econometrics, Elsevier, vol. 207(1), pages 175-187.

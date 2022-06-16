@@ -1,10 +1,10 @@
 Package: RobustIV
 Type: Package
 Title: Robust Inference for Causal Effect with Possibly Invalid Instrumental Variables
-Version: 0.2.1
+Version: 0.2.2
 Author: Taehyeon Koo, Zhenyu Wang, Sai Li, Hyunseung Kang, Zijian Guo   
-Maintainer: Taehyeon Koo <tk587@stat.rutgers.edu>
-Description: This package provides functions for robust inference in the presence of potentially invalid instrumental variables, including the Two-Stage Hard Thresholding(TSHT) method, the Searching and Sampling method, the Endogeneity test in high dimension, the Control function method, and SpotIV method.
+Maintainer: Zijian Guo <zijguo@stat.rutgers.edu>
+Description: This package provides functions for robust inference in the presence of potentially invalid instrumental variables, including TSHT method, Searching and Sampling, and SpotIV method. It also provides inference for non-linear outcome models with the control function method and conduct the endogeneity test in high dimensions. 
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
