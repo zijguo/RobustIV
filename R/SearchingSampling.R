@@ -96,9 +96,13 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     out = TSHT.SIHR(Y, D, W, pz, intercept=intercept)
     ITT_Y = out$ITT_Y
     ITT_D = out$ITT_D
-    V.Gamma = out$V.Gamma
-    V.gamma = out$V.gamma
-    C = out$C
+    SigmaSqY = out$SigmaSqY
+    SigmaSqD = out$SigmaSqD
+    SigmaYD = out$SigmaYD
+    WUMat = out$WUMat
+    V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
+    V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
+    C = SigmaYD * t(WUMat)%*%WUMat / n
   }
 
   TSHT.out <- TSHT.Init(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C)
@@ -341,7 +345,8 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
 }
 
 TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
-  
+  n = nrow(W)
+  covW = t(W)%*%W / n
   init_Y = Lasso(W, Y, lambda="CV.min", intercept=intercept)
   init_D = Lasso(W, D, lambda="CV.min", intercept=intercept)
   
@@ -361,14 +366,22 @@ TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
   SigmaSqY = sum(resid_Y^2)/n
   SigmaSqD = sum(resid_D^2)/n
   SigmaYD = sum(resid_Y * resid_D)/n
-  Temp = t(WUMat)%*%WUMat / n
-  V.Gamma = SigmaSqY * Temp
-  V.gamma = SigmaSqD * Temp
-  C = SigmaYD * Temp
+  # Temp = t(WUMat)%*%WUMat / n
+  # V.Gamma = SigmaSqY * Temp
+  # V.gamma = SigmaSqD * Temp
+  # C = SigmaYD * Temp
   
   return(list(ITT_Y = ITT_Y,
               ITT_D = ITT_D,
-              V.Gamma = V.Gamma,
-              V.gamma = V.gamma,
-              C = C))
+              WUMat = WUMat,
+              SigmaSqY = SigmaSqY,
+              SigmaSqD = SigmaSqD,
+              SigmaYD = SigmaYD,
+              covW = covW))
+  
+  # return(list(ITT_Y = ITT_Y,
+  #             ITT_D = ITT_D,
+  #             V.Gamma = V.Gamma,
+  #             V.gamma = V.gamma,
+  #             C = C))
 }

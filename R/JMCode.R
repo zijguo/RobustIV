@@ -146,12 +146,19 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
       return (as.vector(outLas$beta));
     }
   } else {
-    outLas <- glmnet(X, y, family = c("gaussian"), alpha =1, intercept = intercept );
+    outLas <- glmnet(X, y, family ="gaussian", alpha =1, intercept = intercept, standardize=T);
     # Objective :1/2 RSS/n +lambda *penalty
+    htheta = if(lamba=="CV.min"){
+      as.vector(coef(outLas, s=outLas$lambda.min))
+    }else if(lambda=="CV"){
+      as.vector(coef(outLas, s=outLas$lambda.1se))
+    }else{
+      as.vector(coef(outLas, s=lambda))
+    }
     if (intercept==TRUE){
-      return (as.vector(coef(Las,s=lambda)));
+      return (htheta);
     } else {
-      return (as.vector(coef(Las,s=lambda))[2:(p+1)]);
+      return (htheta[2:(p+1)]);
     }
   }
 }
