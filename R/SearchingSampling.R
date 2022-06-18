@@ -7,7 +7,7 @@
 #' @param Z A matrix of instruments.
 #' @param X A matrix of exogenous covariates.
 #' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
-#' @param method 
+#' @param method
 #' @param robust If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
 #' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
 #' @param alpha Significance level (default=0.05)
@@ -37,16 +37,15 @@
 #' summary(SS.model)
 #'
 #' }
-
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               method=c("OLS","DeLasso","Fast.DeLasso"),
                               robust=TRUE, Sampling=TRUE, alpha=0.05,
-                              CI.init = NULL, a=0.6, 
+                              CI.init = NULL, a=0.6,
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
   method = match.arg(method)
   if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
     robust = FALSE
-    cat(sprintf("For methods %s, robust is set FALSE, 
+    cat(sprintf("For methods %s, robust is set FALSE,
                 as we only consider homoscedastic noise.\n", method))
   }
 
@@ -55,9 +54,9 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 
   ## centralize W
   W = scale(W, center=T, scale=F)
-  
+
   if(method=="OLS"){
-    
+
     if(robust){
       out = TSHT.OLS_hetero(Y, D, W, pz, intercept=intercept)
       ITT_Y = out$ITT_Y
@@ -77,9 +76,9 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
       V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
       C = SigmaYD * t(WUMat)%*%WUMat / n
     }
-    
+
   }else if(method=="Fast.DeLasso"){
-    
+
     out = TSHT.DeLasso(Y, D, W, pz, intercept=intercept)
     ITT_Y = out$ITT_Y
     ITT_D = out$ITT_D
@@ -90,9 +89,9 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
     V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
     C = SigmaYD * t(WUMat)%*%WUMat / n
-    
+
   }else if(method=="DeLasso"){
-    
+
     out = TSHT.SIHR(Y, D, W, pz, intercept=intercept)
     ITT_Y = out$ITT_Y
     ITT_D = out$ITT_D
@@ -107,6 +106,7 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 
   TSHT.out <- TSHT.Init(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C)
   V0.hat = sort(TSHT.out$VHat)
+  if(length(V0.hat)==0) stop("No valid IVs selected.")
   ## Construct range [L, U]
   if(is.vector(CI.init)){
     CI.init.union = matrix(CI.init, ncol=2)
@@ -349,11 +349,11 @@ TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
   covW = t(W)%*%W / n
   init_Y = Lasso(W, Y, lambda="CV.min", intercept=intercept)
   init_D = Lasso(W, D, lambda="CV.min", intercept=intercept)
-  
-  W_int = ifelse(intercept, cbind(1, W), W)
+
+  if(intercept) W_int = cbind(1, W) else W_int = W
   resid_Y = as.vector(Y - W_int%*%init_Y)
-  resid_D = as.vector(Y - W_int%*%init_D)
-  
+  resid_D = as.vector(D - W_int%*%init_D)
+
   loading.mat = matrix(0, nrow=ncol(W), ncol=pz)
   for(i in 1:pz) loading.mat[i, i] = 1
   out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
@@ -362,7 +362,7 @@ TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
   ITT_D = out2$est.debias.vec
   U = out2$proj.mat
   WUMat = W_int%*%U
-  
+
   SigmaSqY = sum(resid_Y^2)/n
   SigmaSqD = sum(resid_D^2)/n
   SigmaYD = sum(resid_Y * resid_D)/n
@@ -370,7 +370,7 @@ TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
   # V.Gamma = SigmaSqY * Temp
   # V.gamma = SigmaSqD * Temp
   # C = SigmaYD * Temp
-  
+
   return(list(ITT_Y = ITT_Y,
               ITT_D = ITT_D,
               WUMat = WUMat,
@@ -378,7 +378,7 @@ TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
               SigmaSqD = SigmaSqD,
               SigmaYD = SigmaYD,
               covW = covW))
-  
+
   # return(list(ITT_Y = ITT_Y,
   #             ITT_D = ITT_D,
   #             V.Gamma = V.Gamma,
