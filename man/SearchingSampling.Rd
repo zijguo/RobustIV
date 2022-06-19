@@ -10,11 +10,12 @@ SearchingSampling(
   Z,
   X = NULL,
   intercept = TRUE,
-  lowd = TRUE,
+  method = c("OLS", "DeLasso", "Fast.DeLasso"),
   robust = TRUE,
+  Sampling = TRUE,
+  alpha = 0.05,
   CI.init = NULL,
   a = 0.6,
-  Sampling = TRUE,
   rho = NULL,
   M = 1000,
   prop = 0.1,
@@ -32,23 +33,23 @@ SearchingSampling(
 
 \item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
 
-\item{lowd}{If \code{TRUE}, fit low-dimensional model, else fit high-dimensional one (default=\code{TRUE})}
-
 \item{robust}{If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})}
+
+\item{Sampling}{If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})}
+
+\item{alpha}{Significance level (default=0.05)}
 
 \item{CI.init}{Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})}
 
 \item{a}{Grid size for constructing beta grids (default=0.6)}
 
-\item{Sampling}{If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})}
+\item{rho}{Initial value constructed for sampling method (default=\code{NULL}). It works only for Sampling method.}
 
-\item{rho}{Initial value constructed for sampling method (default=\code{NULL})}
+\item{M}{Sampling times (default = 1000). It works only for Sampling method.}
 
-\item{M}{Sampling times. (default = 1000)}
+\item{prop}{Proportion of intervals kept when sampling (default=0.1). It works only for Sampling method.}
 
-\item{prop}{Proportion of intervals kept when sampling. (default=0.1)}
-
-\item{filtering}{Filtering sampling or not (default=\code{TRUE})}
+\item{filtering}{Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.}
 }
 \value{
 \item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}

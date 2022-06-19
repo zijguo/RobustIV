@@ -16,15 +16,15 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
     train.fun <- function(X, y, lambda=NULL){
       if(is.null(lambda)) lambda = "CV.min"
       htheta <- if (lambda == "CV.min") {
-        outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
+        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
                             intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = outLas$lambda.min))
       } else if (lambda == "CV") {
-        outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
+        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
                             intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = outLas$lambda.1se))
       } else {
-        outLas <- glmnet(X, y, family = "gaussian", alpha = 1,
+        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
                          intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = lambda))
       }

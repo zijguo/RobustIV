@@ -9,9 +9,6 @@
 \arguments{
 \item{x}{SS object}
 }
-\value{
-
-}
 \description{
 Summary of SS
 }

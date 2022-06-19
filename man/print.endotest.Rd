@@ -9,9 +9,6 @@
 \arguments{
 \item{x}{endotest object}
 }
-\value{
-
-}
 \description{
 Summary of endotest
 }
