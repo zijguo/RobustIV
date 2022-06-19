@@ -11,40 +11,40 @@ endo.test(
   X,
   intercept = TRUE,
   alpha = 0.05,
-  method = "DeLasso",
-  invalid = TRUE,
+  method = c("Fast.DeLasso", "DeLasso", "OLS"),
+  invalid = FALSE,
   voting = "MaxClique"
 )
 }
 \arguments{
-\item{Y}{A continuous vector of outcomes.}
+\item{Y}{The outcome observation, a vector of length \eqn{n}.}
 
-\item{D}{A continuousvector of endogenous variables.}
+\item{D}{The treatment observation, a vector of length \eqn{n}.}
 
-\item{Z}{A matrix of instruments.}
+\item{Z}{The instrument observation of dimension \eqn{n \times p_z}.}
 
-\item{X}{A matrix of exogenous covariates.}
+\item{X}{The covariates observation of dimension \eqn{n \times p_x}.}
 
-\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
+\item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
 \item{alpha}{The significance level for the confidence interval. (default = 0.05)}
 
-\item{method}{The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "DeLasso")}
+\item{method}{The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = "Fast.DeLasso")}
 
-\item{invalid}{If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = TRUE)}
+\item{invalid}{If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})}
 
 \item{voting}{The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')}
 }
 \value{
 \code{endo.test} returns an object of class "endotest".
     An object class "endotest" is a list containing the following components:
-   \item{\code{Q}}{Endogeneity test statistic.}
+   \item{\code{Q}}{Ttest statistic.}
    \item{\code{Sigma12}}{Estimated covaraince.}
    \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
    \item{\code{alpha}}{The significance level.}
 }
 \description{
-Conduct the endogeneity test in high-dimensional linear models in the presence of potentially invalid instrumental variables.
+Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
 }
 \examples{
 \dontrun{
@@ -62,6 +62,9 @@ endo.test.model <- endo.test(Y,D,Z,X)
 summary(endo.test.model)
 }
 
-
-
+}
+\references{
+{
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Testing endogeneity with high dimensional covariates, \emph{Journal of Econometrics}, Elsevier, vol. 207(1), pages 175-187. \cr
+}
 }

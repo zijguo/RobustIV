@@ -24,7 +24,7 @@
 #' \item{VHat}{a numeric vector denoting the set of valid and relevant IVs.}
 #' \item{SHat}{a numeric vector denoting the set of relevant IVs.}
 #' @export
-#' @import intervals MASS CVXR
+#' @import intervals MASS CVXR glmnet
 #' @examples
 #'\dontrun{
 #' Y <- mroz[,"lwage"]
