@@ -24,7 +24,7 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
                             intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = outLas$lambda.1se))
       } else {
-        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
+        outLas <- glmnet::glmnet(X, y, family = "gaussian", alpha = 1,
                          intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = lambda))
       }

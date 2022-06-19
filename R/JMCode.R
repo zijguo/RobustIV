@@ -164,7 +164,7 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
                           intercept = intercept, standardize = T)
       as.vector(coef(outLas, s = outLas$lambda.1se))
     } else {
-      outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
+      outLas <- glmnet::glmnet(X, y, family = "gaussian", alpha = 1,
                        intercept = intercept, standardize = T)
       as.vector(coef(outLas, s = lambda))
     }
