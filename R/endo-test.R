@@ -1,23 +1,23 @@
 
 
 #' @title Endogeneity-test
-#' @description Conduct the endogeneity test in high-dimensional linear models in the presence of potentially invalid instrumental variables.
+#' @description Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
 #'
-#' @param Y A continuous vector of outcomes.
-#' @param D A continuousvector of endogenous variables.
-#' @param Z A matrix of instruments.
-#' @param X A matrix of exogenous covariates.
-#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param Y The outcome observation, a vector of length \eqn{n}.
+#' @param D The treatment observation, a vector of length \eqn{n}.
+#' @param Z The instrument observation of dimension \eqn{n \times p_z}.
+#' @param X The covariates observation of dimension \eqn{n \times p_x}.
+#' @param intercept Whether the intercept is included. (default = \code{TRUE})
 #' @param alpha The significance level for the confidence interval. (default = 0.05)
-#' @param method The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "DeLasso")
-#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = TRUE)
+#' @param method The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = "Fast.DeLasso")
+#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
 #' @param voting The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')
 #'
 #'
 #' @return
 #'     \code{endo.test} returns an object of class "endotest".
 #'     An object class "endotest" is a list containing the following components:
-#'    \item{\code{Q}}{Endogeneity test statistic.}
+#'    \item{\code{Q}}{Ttest statistic.}
 #'    \item{\code{Sigma12}}{Estimated covaraince.}
 #'    \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
 #'    \item{\code{alpha}}{The significance level.}
@@ -39,13 +39,17 @@
 #' summary(endo.test.model)
 #' }
 #'
+#' @references {
+#' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Testing endogeneity with high dimensional covariates, \emph{Journal of Econometrics}, Elsevier, vol. 207(1), pages 175-187. \cr
+#' }
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method="DeLasso",
-                      invalid=TRUE, voting = 'MaxClique'){
+#'
+endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso","DeLasso","OLS"),
+                      invalid=FALSE, voting = 'MaxClique'){
   # Check and Clean Input Type #
   # Check Y
-
+  method = match.arg(method)
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -85,16 +89,18 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method="DeLasso",
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
-  stopifnot(method=='OLS' | method=='DeLasso')
+  stopifnot(method=='OLS' | method=='DeLasso' | method =="Fast.DeLasso")
 
   # Derive Inputs for Endogeneity test
   n = length(Y); pz=ncol(Z)
   if(method == "OLS") {
     inputs = TSHT.OLS(Y,D,W,pz,intercept) # recommend when n>>p
 
-  } else if (method == "DeLasso"){
+  } else if (method == "Fast.DeLasso"){
     inputs = TSHT.DeLasso(Y,D,W,pz,intercept)
 
+  } else if(method == "DeLasso"){
+    inputs = TSHT.SIHR(Y, D, W, pz, intercept=intercept)
   }
 
   # Estimate Relevant IVs
@@ -102,12 +108,12 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method="DeLasso",
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW, voting = voting)
+                         SigmaYD=inputs$SigmaYD, voting = voting)
     Set = SetHats$VHat
   } else {
     SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD,covW=inputs$covW)
+                         SigmaYD=inputs$SigmaYD)
     Set = SetHats
   }
   WUMat = inputs$WUMat
@@ -152,17 +158,18 @@ print.endotest<- function(x,...){
   endotest <- x
   cat("\nValid Instruments:", endotest$VHat, "\n");
   cat(rep("_", 30), "\n")
+  cat("Estimated covariance:",endotest$Sigma12,"\n");
   cat("Test statistics Q = ",endotest$Q,"\n")
+  cat("P-value = ",1-pnorm(abs(endotest$Q)),"\n")
   if (abs(endotest$Q)>qnorm(1-endotest$alpha/2)) {
     cat("'H0 : Sigma12 = 0' is rejected at the significance level",endotest$alpha,".\n")
   } else {
     cat("'H0 : Sigma12 = 0' is not rejected at the significance level",endotest$alpha,".\n")
   }
-  cat("P-value = ",1-pnorm(abs(endotest$Q)),"\n")
-  cat("Estimated covariance:",endotest$Sigma12,"\n");
+
 }
 
-endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW) {
+endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
   stopifnot(all(!is.na(ITT_Y)),all(!is.na(ITT_D)))

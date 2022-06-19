@@ -1,31 +1,31 @@
 #' @title Two-Stage Hard Thresholding
 #' @description Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
 #'
-#' @param Y A continuous vector of outcomes.
-#' @param D A continuous vector of endogenous variables.
-#' @param Z A matrix of instruments.
-#' @param X A matrix of exogenous covariates.
-#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param Y The outcome observation, a vector of length \eqn{n}.
+#' @param D The treatment observation, a vector of length \eqn{n}.
+#' @param Z The instrument observation of dimension \eqn{n \times p_z}.
+#' @param X The covariates observation of dimension \eqn{n \times p_x}.
+#' @param intercept Whether the intercept is included. (default = \code{TRUE})
 #' @param alpha The significance level for the confidence interval. (default = 0.05)
-#' @param method The method which will be used to estimate the reduced form parameters in TSHT. "OLS" stands for ordinary least square and "DeLasso" stands for the debiased Lasso estimator. (default = "OLS")
+#' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})
 #' @param voting The voting option used to estimate valid IVs. 'MP' stands for majority and plurality voting, 'MaxClique' stands for finding maximal clique in the IV voting matrix, and 'Conservative' stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= 'MaxClique').
-#' @param robust If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors.  When robust = \code{TRUE}, only 'OLS' can be input to \code{method}. (default = \code{FALSE})
+#' @param robust If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})
 #'
 #' @return
 #'
 #'     \code{TSHT} returns an object of class "TSHT".
 #'     An object class "TSHT" is a list containing the following components:
 #'     \item{\code{betaHat}}{The estimate of treatment effect.}
-#'     \item{\code{beta.sdHat}}{The estimated standard deviation of \code{betaHat}.}
-#'     \item{\code{ci}}{The 1-alpha confidence intervals for \code{betaHat}.}
+#'     \item{\code{beta.sdHat}}{The estimated standard error of \code{betaHat}.}
+#'     \item{\code{ci}}{The 1-alpha confidence interval for \code{beta}.}
 #'     \item{\code{SHat}}{The set of relevant IVs.}
-#'     \item{\code{VHat}}{The set of valid and relevant IVs.}
+#'     \item{\code{VHat}}{The set of relevant and valid IVs.}
 #'     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
 #'     \item{\code{check}}{Whether the majority rule test is passed or not.}
 #'     \item{\code{beta.clique}}{The estimates of treatment effect from each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
 #'     \item{\code{beta.sd.clique}}{The estimated standard deviation of \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-#'     \item{\code{CI.clique}}{The 1-alpha confidence intervals for \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-#'     \item{\code{max.clique}}{The maximum cliques of voted as valid IVs. Only returns when \code{voting} is \code{'MaxClique'}}
+#'     \item{\code{CI.clique}}{The 1-alpha confidence interval for \code{beta} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
+#'     \item{\code{max.clique}}{The maximum cliques voted as valid IVs. Only returns when \code{voting} is \code{'MaxClique'}}
 #'
 #' @export
 #'
@@ -41,8 +41,14 @@
 #'
 #'
 TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
-                 method="OLS", voting = 'MaxClique', robust = FALSE) {
+                 method=c("OLS","DeLasso","Fast.DeLasso"), voting = 'MaxClique', robust = FALSE) {
   stopifnot(is.logical(robust))
+  method = match.arg(method)
+  if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
+    robust = FALSE
+    cat(sprintf("For methods %s, robust is set FALSE,
+                as we only consider homoscedastic noise.\n", method))
+  }
   if (robust == TRUE) {
     TSHTObject <- TSHT_hetero(Y = Y,D = D,Z = Z,X = X,intercept = intercept, alpha = alpha,
                                 method = method, voting = voting)
@@ -86,7 +92,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
     # All the other argument
     stopifnot(is.logical(intercept))
     stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
-    stopifnot(method=='OLS' | method=='DeLasso')
+    stopifnot(method=='OLS' | method=='DeLasso'|method =="Fast.DeLasso")
     stopifnot(voting=='MP' | voting=='MaxClique' | voting == 'Conservative')
 
     # Derive Inputs for TSHT
@@ -95,8 +101,12 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
       inputs = TSHT.OLS(Y,D,W,pz,intercept)
       A = t(inputs$WUMat) %*% inputs$WUMat / n
     } else if (method == "DeLasso") {
+      inputs =  TSHT.SIHR(Y,D,W,pz,intercept)
+      A = diag(pz)
+    } else if (method =="Fast.DeLasso"){
       inputs = TSHT.DeLasso(Y,D,W,pz,intercept)
       A = diag(pz)
+
     }
 
     # Reduced form estimator
@@ -106,12 +116,12 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
     SigmaSqD = inputs$SigmaSqD;
     SigmaSqY = inputs$SigmaSqY;
     SigmaYD=inputs$SigmaYD;
-    covW=inputs$covW
+
 
     # Estimate Valid IVs
     SetHats = TSHT.VHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
                         SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,SigmaYD=SigmaYD,
-                        covW=covW, voting = voting)
+                        voting = voting)
     VHat = SetHats$VHat; SHat = SetHats$SHat
     check = T
     if(length(VHat)< length(SHat)/2){
@@ -128,6 +138,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
       for (i in 1:length(max.clique)) {
         temp <- SHat[sort(as.numeric(max.clique[[i]]))]
         max.clique.mat[i,] <- temp
+        if (!is.null(colnames(Z))) {
+          max.clique.mat[i,] <- colnames(Z)[max.clique.mat[i,]]
+        }
         AVHat = solve(A[temp,temp])
         betaHat = (t(ITT_Y[temp]) %*% AVHat %*% ITT_D[temp]) / (t(ITT_D[temp]) %*% AVHat %*% ITT_D[temp])
         SigmaSq = SigmaSqY + betaHat^2 * SigmaSqD - 2*betaHat * SigmaYD
@@ -188,14 +201,13 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
   SigmaSqD = sum(Matrix::qr.resid(qrW,D)^2)/(n -p)
   SigmaYD = sum(Matrix::qr.resid(qrW,Y) * Matrix::qr.resid(qrW,D)) / (n - p)
 
-  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD,covW=covW))
+  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
 }
 
 
 
 TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
   n = nrow(W)
-  covW = t(W) %*% W /n #this should automatically turn covW into a matrix
   # Fit Reduced-Form Model for Y and D
   model_Y <- SSLasso(X=W,y=Y,intercept=intercept,verbose=FALSE)
   model_D = SSLasso(X=W,y=D,intercept=intercept,verbose=FALSE)
@@ -207,12 +219,48 @@ TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
   SigmaYD =sum(resid_Y * resid_D)/n
   WUMat = model_D$WUMat[,1:(pz)]
 
-  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD,covW=covW))
+  return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
+}
+
+TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
+  n = nrow(W)
+  covW = t(W)%*%W / n
+  init_Y = Lasso(W, Y, lambda="CV.min", intercept=intercept)
+  init_D = Lasso(W, D, lambda="CV.min", intercept=intercept)
+
+  if(intercept) W_int = cbind(1, W) else W_int = W
+  resid_Y = as.vector(Y - W_int%*%init_Y)
+  resid_D = as.vector(D - W_int%*%init_D)
+
+  loading.mat = matrix(0, nrow=ncol(W), ncol=pz)
+  for(i in 1:pz) loading.mat[i, i] = 1
+  out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
+  out2 = LF(W, D, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
+  ITT_Y = out1$est.debias.vec
+  ITT_D = out2$est.debias.vec
+  U = out2$proj.mat
+  WUMat = W_int%*%U
+
+  SigmaSqY = sum(resid_Y^2)/n
+  SigmaSqD = sum(resid_D^2)/n
+  SigmaYD = sum(resid_Y * resid_D)/n
+  # Temp = t(WUMat)%*%WUMat / n
+  # V.Gamma = SigmaSqY * Temp
+  # V.gamma = SigmaSqD * Temp
+  # C = SigmaYD * Temp
+
+  return(list(ITT_Y = ITT_Y,
+              ITT_D = ITT_D,
+              WUMat = WUMat,
+              SigmaSqY = SigmaSqY,
+              SigmaSqD = SigmaSqD,
+              SigmaYD = SigmaYD))
+
 }
 
 
 
-TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,covW,
+TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,
                       voting = 'MaxClique') {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
@@ -342,9 +390,20 @@ summary.TSHT <- function(object,...){
 #' @export
 print.TSHT <- function(x,...){
   TSHT <- x
-  cat("\nValid Instruments:", TSHT$VHat, "\n");
-  cat("\nRelevant Instruments:", TSHT$SHat,"\n","\nThus, Majority rule",ifelse(TSHT$check,"holds.","does not hold."), "\n");
+  cat("\nRelevant Instruments:", TSHT$SHat, "\n");
+  cat("\nValid Instruments:", TSHT$VHat,"\n","\nThus, Majority rule",ifelse(TSHT$check,"holds.","does not hold."), "\n");
   cat(rep("_", 30), "\n")
   cat("\nBetaHat:",TSHT$betaHat,"\n");
-  cat("\nConfidence Interval of BetaHat: [", TSHT$ci[1], ",", TSHT$ci[2], "]", "\n", sep = '');
+  cat("\nConfidence interval for Beta: [", TSHT$ci[1], ",", TSHT$ci[2], "]", "\n", sep = '');
+  if (!is.null(TSHT$beta.clique)) {
+    cat(rep("_", 30), "\n")
+    cat("\nResults from each maximum clique\n")
+    for (i in 1:nrow(TSHT$max.clique)) {
+      cat("\nMaximum clique", i,":", TSHT$max.clique[i,], "\n");
+      cat("\nBetaHat from the clique:",TSHT$beta.clique[i,],"\n");
+      cat("\nConfidence interval for Beta from the clique: [", TSHT$CI.clique[i,1], ",", TSHT$CI.clique[i, 2], "]", "\n", sep = '');
+      cat(rep("_", 30), "\n")
+    }
+  }
+
 }
