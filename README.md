@@ -23,16 +23,26 @@ We use Mroz (1987) data to estimate the effect of education on log earnings. Her
 > TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 > summary(TSHT.model)
 
-Valid Instruments: motheduc fatheduc huseduc 
-
 Relevant Instruments: motheduc fatheduc huseduc 
+
+Valid Instruments: motheduc fatheduc huseduc 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.08029083 
 
-Confidence Interval of BetaHat: [0.03744511,0.1231365]
+Confidence interval for Beta: [0.03744511,0.1231365]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+Results from each maximum clique
+
+Maximum clique 1 : motheduc fatheduc huseduc 
+
+BetaHat from the clique: 0.08029083 
+
+Confidence interval for Beta from the clique: [0.03744511,0.1231365]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 ```
 ### Reference
@@ -52,10 +62,10 @@ Initial set of Valid Instruments: motheduc fatheduc huseduc
 
 Relevant Instruments: motheduc fatheduc huseduc 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval of BetaHat: [-0.2831715,0.2442571]
+Confidence Interval of BetaHat: [-0.2778141,0.2496146]
 
 > SS.model <- SearchingSampling(Y,D,Z,X)
 > summary(SS.model)
@@ -64,10 +74,10 @@ Initial set of Valid Instruments: motheduc fatheduc huseduc
 
 Relevant Instruments: motheduc fatheduc huseduc 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval of BetaHat: [-0.09857149,0.1651428]
+Confidence Interval of BetaHat: [-0.1195855,0.1705003]
 ```
 ### Reference
 Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
@@ -80,9 +90,9 @@ We use the control function method in additive model with continuous outcome and
 > D <- mroz[,"educ"]
 > Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 > X <- as.matrix(mroz[,c("exper","expersq","age")])
-> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D)+1,(median(D)+1)^2),d2 = c(median(D),median(D)^2))
+> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D),median(D)^2),d2 = c(median(D)+1,(median(D)+1)^2))
 > summary(cf.model)
- _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 Coefficients of Control Function Estimators:
 
@@ -99,17 +109,18 @@ Causal effect from D = 12 to 13 :  0.07262563
 
 > pretest.model <- pretest(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 > summary(pretest.model)
- 
- _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Level 0.05 Pretest estimator is Control function estimator. 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 Hausman Statistic :  1.313563 
 
 P value =  0.2517505 
+
+H0 : Augmented instrumental variables from Control function are valid, is not rejected. 
+
+Level 0.05 Pretest estimator is Control function estimator. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Coefficients of Control Function Estimators:
+Coefficients of Pretest Estimators:
 
               Estimate    Std.Err t value Pr(>|t|)    
 (Intercept)  1.2573907  0.7871438   1.597 0.055457 .  
@@ -137,39 +148,39 @@ causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), T
 > Y0 <- as.numeric((Y>median(Y)))
 > d2 = median(D); d1 = d2+1;
 > w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
-> SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
+> SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5], invalid = TRUE)
 > summary(SpotIV.model)
 
-Valid Instruments: motheduc fatheduc huseduc 
-
 Relevant Instruments: motheduc fatheduc huseduc 
+
+Valid Instruments: motheduc fatheduc huseduc 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.8791451 
 
 CATEHat: 0.1298192 
 
-Confidence Interval of CATEHat: [-0.6774876,0.9371261]
+Confidence Interval for CATE: [-0.7500586,1.009697]
 ```
 
 ```R
-> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
+> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0, invalid = TRUE)
 > summary(Probit.model)
 
-Valid Instruments: motheduc fatheduc huseduc 
-
 Relevant Instruments: motheduc fatheduc huseduc 
+
+Valid Instruments: motheduc fatheduc huseduc 
  
-Thus, Majority rule holds 
+Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.2118909 
 
 CATEHat: 0.08435024 
 
-Confidence Interval of CATEHat: [0.01999327,0.1487072]
+Confidence Interval for CATE: [0.02950681,0.1391937]
 ```
 
 ### Reference
@@ -195,18 +206,28 @@ D = Z\gamma + X\psi + v
 > epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 > D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
 > Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
-> summary(TSHT(Y,D,Z,X, method = "DeLasso"))
-
-Valid Instruments: 4 5 6 7 8 9 10 
+> summary(TSHT(Y,D,Z,X, method = "Fast.DeLasso"))
 
 Relevant Instruments: 1 2 3 4 5 6 7 8 9 10 
+
+Valid Instruments: 4 5 6 7 8 9 10 
  
 Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.9893991 
 
-Confidence Interval of BetaHat: [0.9582907,1.020508]
+Confidence interval for Beta: [0.9582907,1.020508]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+Results from each maximum clique
+
+Maximum clique 1 : 4 5 6 7 8 9 10 
+
+BetaHat from the clique: 0.9893991 
+
+Confidence interval for Beta from the clique: [0.9582907,1.020508]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 ```
 
@@ -225,15 +246,15 @@ It uses same reduced form estimator as TSHT in each setting.
 > epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 > D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
 > Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
-> endo.test.model <- endo.test(Y,D,Z,X)
+> endo.test.model <- endo.test(Y,D,Z,X, invalid = TRUE)
 > summary(endo.test.model)
 
 Valid Instruments: 4 5 6 7 8 9 10 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-Test statistics Q =  13.47976 
-'H0 : Sigma12 = 0' is rejected at the significance level 0.05 .
-P-value =  0 
 Estimated covariance: 0.7690532 
+Test statistics Q =  13.47976 
+P-value =  0 
+'H0 : Sigma12 = 0' is rejected at the significance level 0.05 .
 ```
 
 ### Reference
