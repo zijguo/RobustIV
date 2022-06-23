@@ -35,10 +35,10 @@ Direction_fixedtuning <- function(X, loading, mu = NULL, weight = NULL, deriv.ve
   }else{
     H <- cbind(loading / loading.norm, diag(1, pp))
   }
-  v <- Variable(pp+1)
+  v <- CVXR::Variable(pp+1)
   obj <- 1/4*sum(((X%*%H%*%v)^2)*weight*deriv.vec)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
-  prob <- Problem(Minimize(obj))
-  result <- solve(prob)
+  prob <- CVXR::Problem(CVXR::Minimize(obj))
+  result <- CVXR::solve(prob)
   if(result$status=="optimal" || result$status == "unbounded"){
     opt.sol<-result$getValue(v)
     cvxr_status<-result$status
@@ -93,11 +93,11 @@ Direction_searchtuning <- function(X, loading, weight = NULL, deriv.vec = NULL, 
     }else{
       H <- cbind(loading / loading.norm, diag(1, pp))
     }
-    v <- Variable(pp+1)
+    v <- CVXR::Variable(pp+1)
     obj <- 1/4*sum(((X%*%H%*%v)^2)*weight*deriv.vec)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
 
-    prob <- Problem(Minimize(obj))
-    result <- solve(prob)
+    prob <- CVXR::Problem(CVXR::Minimize(obj))
+    result <- CVXR::solve(prob)
     cvxr_status <- result$status
     if(tryno == 1){
       if(cvxr_status == "optimal"){

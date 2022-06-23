@@ -1,6 +1,6 @@
 
 
-#' @title Endogeneity-test
+#' @title Endogeneity test in high dimensions
 #' @description Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
 #'
 #' @param Y The outcome observation, a vector of length \eqn{n}.

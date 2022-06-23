@@ -1,6 +1,6 @@
 #' lineardata
 #'
-#' Psuedo data of the Framingham Heart Study data provided by Youjin lee. This was created by adding some random terms to original data.
+#' Psuedo data of the Framingham Heart Study data provided by Youjin lee.
 #'
 #' @docType data
 #'

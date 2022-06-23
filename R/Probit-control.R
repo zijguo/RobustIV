@@ -1,22 +1,22 @@
 #' @title Causal inference in probit outcome models with possibly invalid IVs
-#' @description Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using SpotIV method.
+#' @description Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using \code{SpotIV}.
 #'
-#' @param Y A vector of outcomes.
-#' @param D A continuous vector of endogenous variables.
-#' @param Z A matrix of instruments.
-#' @param X A matrix of exogenous covariates.
-#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
-#' @param d1 a treatment value for computing CATE(d1,d2|w0).
-#' @param d2 a treatment value for computing CATE(d1,d2|w0).
-#' @param w0  a vector for computing CATE(d1,d2|w0).
+#' @param Y The outcome observation, a vector of length \eqn{n}.
+#' @param D The treatment observation, a vector of length \eqn{n}.
+#' @param Z The instrument observation of dimension \eqn{n \times p_z}.
+#' @param X The covariates observation of dimension \eqn{n \times p_x}.
+#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
+#' @param intercept Whether the intercept is included. (default = \code{TRUE})
+#' @param d1 A treatment value for computing CATE(d1,d2|w0).
+#' @param d2 A treatment value for computing CATE(d1,d2|w0).
+#' @param w0  A vector for computing CATE(d1,d2|w0).
 #' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
-#' @param method If 'majority', the method is robust to the presence of possibly invalid IVs; If 'valid', the method assumes all IVs to be valid. (default = 'majority')
 #'
 #' @return
 #'     \code{ProbitControl} returns an object of class "SpotIV".
 #'     An object class "SpotIV" is a list containing the following components:
 #'     \item{\code{betaHat}}{The estimate of causal parameter.}
-#'     \item{\code{beta.sdHat}}{The estimated standard deviation of betaHat.}
+#'     \item{\code{beta.sdHat}}{The estimated standard error of betaHat.}
 #'     \item{\code{cateHat}}{The estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
 #'     \item{\code{SHat}}{The estimated set of relevant IVs.}
@@ -41,13 +41,17 @@
 #' summary(Probit.model)
 #'}
 #'
+#' @references {
+#' Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
+#' }
 #'
 #'
 
 
 
 
-ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=40, intercept=TRUE, method='majority'){
+ProbitControl<- function(Y, D, Z, X=NULL, invalid=FALSE, intercept=TRUE,
+                         d1=NULL, d2=NULL , w0=NULL, bs.Niter=40){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -79,13 +83,14 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
   }
 
   # All the other argument
-  stopifnot(method=='majority' | method=='valid')
+  stopifnot(is.logical(invalid))
   stopifnot(is.logical(intercept))
 
   pz<- ncol(Z)
   px<-0
   if(!is.null(X)){
     Z<-cbind(Z,X)
+    X <- cbind(X)
     px<-ncol(X)
   }
   stopifnot(length(w0)==ncol(Z))
@@ -101,7 +106,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
   sig.v.hat<- mean(v.hat^2)
   gam.cov<-n*vcov(gam.re)[1:pz,1:pz]
 
-  if(method=='majority'){
+  if(invalid){
     #reduced form
     Gam.re<-glm(Y~cbind(Z,v.hat)-1, family=binomial(link='probit'))
     Gam.hat<-Gam.re$coef[-length(Gam.re$coef)]
@@ -121,17 +126,16 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
     pi.hat<- Gam.hat - gam.hat * beta.hat
     kappa.hat<-lam.hat-beta.hat #coef of v.hat
   }else{ #valid IV method
-    Maj.pass=NA
     SHat=1:pz
-    if((!intercept) & px==0){
+    if((!intercept) && px==0){
       coef.re<-glm(Y~D+v.hat-1)$coef
       beta.hat<- coef.re[1]
       pi.hat<-c(rep(0,pz))
       kappa.hat<-coef.re[length(coef.re)]
     }else{
-      if(intercept& px>0){
+      if(intercept && (px>0)){
         X<-cbind(X,1)
-      }else if(intercept & px==0){
+      }else if(intercept && px==0){
         X<-matrix(rep(1,n),ncol=1)
       }
       coef.re<-glm(Y~D+X+v.hat-1)$coef
@@ -143,7 +147,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
   }
 
   cace.hat<-NA; cace.sd<-NA
-  if(!is.null(d1) & !is.null(d2) & !is.null(w0)){ #compute cate and its sd
+  if(!is.null(d1) && !is.null(d2) && !is.null(w0)){ #compute cate and its sd
     if(intercept){ w0=c(w0,1)}
     cace.hat = mean(pnorm(as.numeric(d1*beta.hat+w0%*%pi.hat) + v.hat*kappa.hat))-
       mean(pnorm(as.numeric(d2*beta.hat+w0%*%pi.hat) + v.hat*kappa.hat))
@@ -155,7 +159,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
         {tryCatch({
             bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),];
             bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, d1=d1,d2=d2,
-                            w0=w0, SHat=SHat, method=method, intercept=intercept);
+                            w0=w0, SHat=SHat, invalid=invalid, intercept=intercept);
             sample.true<-T;
             },error=function(e){
             },finally={})
@@ -171,7 +175,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
       {tryCatch({
         bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),];
         bs.lst[[i]]<-Probit.boot.fun(data=bootstrap_data, pz=pz, d1=d1,d2=d2,
-                                     w0=w0, SHat=SHat, method=method, intercept=intercept);
+                                     w0=w0, SHat=SHat, invalid=invalid, intercept=intercept);
         sample.true<-T;
       },error=function(e){
       },finally={})
@@ -189,13 +193,13 @@ ProbitControl<- function(Y, D, Z, X=NULL, d1=NULL, d2=NULL , w0=NULL, bs.Niter=4
   return(Probit.model)
 }
 
-Probit.boot.fun<-function(data, pz,d1=NULL, d2=NULL,w0=NULL, SHat, method=method, intercept=intercept){
+Probit.boot.fun<-function(data, pz,d1=NULL, d2=NULL,w0=NULL, SHat, invalid=invalid, intercept=intercept){
   Y<-data[,1]
   D<- data[,2]
   Z<-data[,-c(1,2)]
   gam.bs<-lm(D~Z-1)$coef
   v.bs <- D- Z%*%gam.bs
-  if(method=='majority'){
+  if(invalid){
     Gam.bs.re<-glm(Y~cbind(Z,v.bs)-1, family=binomial(link='probit'))
     Gam.bs<-Gam.bs.re$coef[-length(Gam.bs.re$coef)]
     lam.bs<-Gam.bs.re$coef[length(Gam.bs.re$coef)]
@@ -219,14 +223,14 @@ Probit.boot.fun<-function(data, pz,d1=NULL, d2=NULL,w0=NULL, SHat, method=method
   }
 
   cace.bs<-NA
-  if(!is.null(d1) & !is.null(d2) & !is.null(w0)){
+  if(!is.null(d1) && !is.null(d2) && !is.null(w0)){
     cace.bs = mean(pnorm(as.numeric(d1*beta.bs+w0%*%pi.bs) + v.bs*kappa.bs))-
       mean(pnorm(as.numeric(d2*beta.bs+w0%*%pi.bs) + v.bs*kappa.bs))
   }
   c(cace.bs, beta.bs)
 }
 
-Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01, majority=T) {
+Majority.test <- function(n, ITT_Y,ITT_D, Cov.gGam, tuning = 2.01) {
   Var.comp.est <- function(Cov.mat, gam.hat, j){
     diag(Cov.mat) + (gam.hat/gam.hat[j])^2 * Cov.mat[j,j] - 2*gam.hat/gam.hat[j] * Cov.mat[j,]
   }

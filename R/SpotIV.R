@@ -1,33 +1,31 @@
-#' @title SpotIV method for causal inference in nonlinear outcome models
-#' @description Perform causal inference in semi-parametric outcome model with possibly invalid IVs under the majority rule using SpotIV method.
-#' @param Y A numeric vector of outcomes.
-#' @param D A continuous vector of endogenous variables.
-#' @param Z A matrix of instruments.
-#' @param X A matrix of exogenous covariates.
-#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
-#' @param M The dimension of indices in the outcome model, from 1 to 3. Default is 2.
-#' @param M.est True or False, whether estimate M based on BIC. (default = TRUE)
+#' @title SpotIV method for causal inference in semi-parametric outcome model
+#' @description Perform causal inference in the semi-parametric outcome model with possibly invalid IVs.
+#' @param Y The outcome observation, a vector of length \eqn{n}.
+#' @param D The treatment observation, a vector of length \eqn{n}.
+#' @param Z The instrument observation of dimension \eqn{n \times p_z}.
+#' @param X The covariates observation of dimension \eqn{n \times p_x}.
 #' @param invalid If TRUE, the method is robust to the presence of possibly invalid IVs; If FALSE, the method assumes all IVs to be valid. (default = TRUE)
 #' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
-#' @param d1 a treatment value for computing CATE(d1,d2|w0).
-#' @param d2 a treatment value for computing CATE(d1,d2|w0).
-#' @param w0  a value of measured covariates and instruments for computing CATE(d1,d2|w0).
-#' @param bw  a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
-#' @param parallel  True or False indicating whether to use parallel computing (maybe useless on Windows). (default = FALSE)
+#' @param d1 A treatment value for computing CATE(d1,d2|w0).
+#' @param d2 A treatment value for computing CATE(d1,d2|w0).
+#' @param w0  A value of measured covariates and instruments for computing CATE(d1,d2|w0).
+#' @param M.est Whether estimate M based on BIC. (default = TRUE)
+#' @param M The dimension of indices in the outcome model, from 1 to 3. Default is 2.
+#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
+#' @param bw  A (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
 
 #' @return
-#'     \code{ProbitControl} returns an object of class "SpotIV".
+#'     \code{SpotIV} returns an object of class "SpotIV".
 #'     An object class "SpotIV" is a list containing the following components:
 #'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
 #'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
-#'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+#'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard error of cateHat.}
 #'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
 #'     \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
 #'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 #' @import dr
 #' @import orthoDr
 #' @import foreach
-#' @import doParallel
 #' @importFrom stats binomial glm median pnorm sd
 #' @export
 #'
@@ -45,11 +43,15 @@
 #' summary(SpotIV.model)
 #'}
 #'
+#' @references {
+#' Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
+#' }
+#'
 #'
 #'
 
-SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, intercept=TRUE,
-                     d1, d2 , w0, bw=NULL, parallel=FALSE){
+SpotIV<- function(Y, D, Z, X=NULL, invalid=TRUE, intercept=TRUE, d1, d2 , w0,
+                  M.est=TRUE, bs.Niter=40, M=2, bw=NULL){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -86,13 +88,13 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.logical(invalid))
-  stopifnot(is.logical(parallel))
   stopifnot(is.logical(M.est))
 
   pz<- ncol(Z)
   px<-0
   if(!is.null(X)){
     Z<-cbind(Z,X)
+    X <- cbind(X)
     px<-ncol(X)
   }
   stopifnot(length(w0)==ncol(Z))
@@ -157,24 +159,13 @@ SpotIV<- function(Y, D, Z, X=NULL, bs.Niter=40, M=2, M.est=TRUE, invalid=TRUE, i
                   Y, D, Z, v.hat=v.hat, bw.z=bw.z)
   cace.hat = asf.dw$cace.hat #cace
   bw.z=asf.dw$bw.z
-  ####bootstrap
-  if(parallel){
-    registerDoParallel(4)
-    boot_b <- foreach(i=1:bs.Niter, .combine='c') %dopar% {
-      bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
-      list(Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,
-                    bw.z=bw.z, V=V, intercept=intercept, pz=pz))
-    }
-    cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
-  }else{
-    boot_b<-list()
-    for(i in 1: bs.Niter){
-      bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
-      boot_b[[i]]<-Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,
-                            bw.z=bw.z, V=V, intercept=intercept, pz=pz)
-    }
-    cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
+  boot_b<-list()
+  for(i in 1: bs.Niter){
+    bootstrap_data<-cbind(Y,D,Z)[sample(n,n,replace=T),]
+    boot_b[[i]]<-Spot.boot.fun(data=bootstrap_data, M=M, d1=d1,d2=d2, w0=w0, SHat=SHat,
+                               bw.z=bw.z, V=V, intercept=intercept, pz=pz)
   }
+  cace.sd<-sqrt(mean((unlist(lapply(boot_b, function(x) x[1]))-cace.hat)^2))
   VHat <- as.numeric(VHat)
   if (!is.null(colnames(Z))) {
     SHat = colnames(Z)[SHat]
@@ -205,13 +196,13 @@ summary.SpotIV <- function(object,...){
 #' @export
 print.SpotIV <- function(x,...){
   SpotIV <- x
-  cat("\nValid Instruments:", SpotIV$VHat, "\n");
-  cat("\nRelevant Instruments:", SpotIV$SHat,"\n","\nThus, Majority rule",ifelse(SpotIV$Maj.pass,"holds.","does not hold."), "\n");
+  cat("\nRelevant Instruments:", SpotIV$SHat, "\n");
+  cat("\nValid Instruments:", SpotIV$VHat,"\n","\nThus, Majority rule",ifelse(SpotIV$Maj.pass,"holds.","does not hold."), "\n");
   cat(rep("_", 30), "\n")
   cat("\nBetaHat:",SpotIV$betaHat,"\n");
   cat("\nCATEHat:",SpotIV$cateHat,"\n");
   ci <- c(SpotIV$cateHat-qnorm(0.975)*SpotIV$cate.sdHat,SpotIV$cateHat+qnorm(0.975)*SpotIV$cate.sdHat)
-  cat("\nConfidence Interval of CATEHat: [", ci[1], ",", ci[2], "]", "\n", sep = '');
+  cat("\nConfidence Interval for CATE: [", ci[1], ",", ci[2], "]", "\n", sep = '');
 }
 
 SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){

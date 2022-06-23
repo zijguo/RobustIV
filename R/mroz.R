@@ -33,4 +33,9 @@
 #' }
 #' @source \url{https://www.cengage.com/cgi-wadsworth/course_products_wp.pl?fid=M20b&product_isbn_issn=9781111531041}
 #' @examples data(mroz)
+#'
+#' @references {
+#' Mroz, Thomas, (1987), The Sensitivity of an Empirical Model of Married Women's Hours of Work to Economic and Statistical Assumptions, \emph{Econometrica}, 55, issue 4, p. 765-99. \cr
+#' Jeffrey M Wooldridge, 2010. "Econometric Analysis of Cross Section and Panel Data," MIT Press Books, The MIT Press, edition 2, volume 1, number 0262232588, December. \cr
+#' }
 "mroz"

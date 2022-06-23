@@ -38,8 +38,9 @@
 #' TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 #' summary(TSHT.model)
 #' }
-#'
-#'
+#' @references {
+#' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
+#' }
 TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
                  method=c("OLS","DeLasso","Fast.DeLasso"), voting = 'MaxClique', robust = FALSE) {
   stopifnot(is.logical(robust))
@@ -351,22 +352,6 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,
     returnList <- list(SHat=SHat,VHat=VHat,voting.mat=VHats.boot.sym)
   }
   return(returnList)
-}
-
-
-cut.off.IVStr<-function(SigmaSqD,WUMat,pz,N=1000,cut.prob=0.99){
-  n=nrow(WUMat)
-
-  unit.matrix<-t(WUMat)%*%WUMat/n^2
-  Cov.D<-SigmaSqD*unit.matrix
-  max.vec<-rep(NA,N)
-  for(j in 1:N){
-    gamma.s<-MASS::mvrnorm(1, rep(0,pz), Cov.D)
-    SE.norm<-diag(unit.matrix)^{1/2}
-    max.vec[j]<-max(abs(gamma.s/SE.norm))
-  }
-  critical.val<-quantile(max.vec,probs=0.99)
-  return(critical.val)
 }
 
 

@@ -1,14 +1,13 @@
-############# Main Function #############
-#' SearchingSampling
-#' @description Conduct Searching-Sampling method, which can construct uniformly valid confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
+#' @title Searching-Sampling
+#' @description Construct Searching and Sampling confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
 #'
-#' @param Y A vector of outcomes.
-#' @param D A continuous vector of endogenous variables.
-#' @param Z A matrix of instruments.
-#' @param X A matrix of exogenous covariates.
-#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
-#' @param method
-#' @param robust If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})
+#' @param Y The outcome observation, a vector of length \eqn{n}.
+#' @param D The treatment observation, a vector of length \eqn{n}.
+#' @param Z The instrument observation of dimension \eqn{n \times p_z}.
+#' @param X The covariates observation of dimension \eqn{n \times p_x}.
+#' @param intercept Whether the intercept is included. (default = \code{TRUE})
+#' @param method The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})
+#' @param robust If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})
 #' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
 #' @param alpha Significance level (default=0.05)
 #' @param CI.init Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
@@ -19,10 +18,11 @@
 #' @param filtering Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.
 #'
 #' @return
-#' \item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-#' \item{check}{True or False indicating whether the plurality rule  is satisfied or not emprically.}
-#' \item{VHat}{a numeric vector denoting the set of valid and relevant IVs.}
-#' \item{SHat}{a numeric vector denoting the set of relevant IVs.}
+#' \item{ci}{1-alpha confidence interval for beta.}
+#' \item{check}{Indicator for whether the plurality rul is satisfied.}
+#' \item{SHat}{The set of relevant IVs.}
+#' \item{VHat}{The initial set of relevant and valid IVs.}
+
 #' @export
 #' @import intervals MASS CVXR glmnet
 #' @examples
@@ -37,9 +37,12 @@
 #' summary(SS.model)
 #'
 #' }
+#' @references {
+#' Guo, Z. (2021), Causal Inference with Invalid Instruments: Post-selection Problems and A Solution Using Searching and Sampling, Preprint \emph{arXiv:2104.06911}. \cr
+#' }
 SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               method=c("OLS","DeLasso","Fast.DeLasso"),
-                              robust=TRUE, Sampling=TRUE, alpha=0.05,
+                              robust=FALSE, Sampling=TRUE, alpha=0.05,
                               CI.init = NULL, a=0.6,
                               rho=NULL, M=1000, prop=0.1, filtering=TRUE){
   method = match.arg(method)
@@ -344,44 +347,6 @@ TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
   return(out)
 }
 
-TSHT.SIHR <- function(Y, D, W, pz, method="OLS", intercept=TRUE){
-  n = nrow(W)
-  covW = t(W)%*%W / n
-  init_Y = Lasso(W, Y, lambda="CV.min", intercept=intercept)
-  init_D = Lasso(W, D, lambda="CV.min", intercept=intercept)
 
-  if(intercept) W_int = cbind(1, W) else W_int = W
-  resid_Y = as.vector(Y - W_int%*%init_Y)
-  resid_D = as.vector(D - W_int%*%init_D)
 
-  loading.mat = matrix(0, nrow=ncol(W), ncol=pz)
-  for(i in 1:pz) loading.mat[i, i] = 1
-  out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
-  out2 = LF(W, D, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
-  ITT_Y = out1$est.debias.vec
-  ITT_D = out2$est.debias.vec
-  U = out2$proj.mat
-  WUMat = W_int%*%U
 
-  SigmaSqY = sum(resid_Y^2)/n
-  SigmaSqD = sum(resid_D^2)/n
-  SigmaYD = sum(resid_Y * resid_D)/n
-  # Temp = t(WUMat)%*%WUMat / n
-  # V.Gamma = SigmaSqY * Temp
-  # V.gamma = SigmaSqD * Temp
-  # C = SigmaYD * Temp
-
-  return(list(ITT_Y = ITT_Y,
-              ITT_D = ITT_D,
-              WUMat = WUMat,
-              SigmaSqY = SigmaSqY,
-              SigmaSqD = SigmaSqD,
-              SigmaYD = SigmaYD,
-              covW = covW))
-
-  # return(list(ITT_Y = ITT_Y,
-  #             ITT_D = ITT_D,
-  #             V.Gamma = V.Gamma,
-  #             V.gamma = V.gamma,
-  #             C = C))
-}
