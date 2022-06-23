@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{SpotIV object}
 }
+\value{
+
+}
 \description{
 Summary of SpotIV
 }

@@ -9,6 +9,9 @@
 \arguments{
 \item{object}{cf object}
 }
+\value{
+
+}
 \description{
 Summary of cf
 }

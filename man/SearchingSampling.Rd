@@ -2,7 +2,7 @@
 % Please edit documentation in R/SearchingSampling.R
 \name{SearchingSampling}
 \alias{SearchingSampling}
-\title{SearchingSampling}
+\title{Searching-Sampling}
 \usage{
 SearchingSampling(
   Y,
@@ -11,7 +11,7 @@ SearchingSampling(
   X = NULL,
   intercept = TRUE,
   method = c("OLS", "DeLasso", "Fast.DeLasso"),
-  robust = TRUE,
+  robust = FALSE,
   Sampling = TRUE,
   alpha = 0.05,
   CI.init = NULL,
@@ -23,17 +23,19 @@ SearchingSampling(
 )
 }
 \arguments{
-\item{Y}{A vector of outcomes.}
+\item{Y}{The outcome observation, a vector of length \eqn{n}.}
 
-\item{D}{A continuous vector of endogenous variables.}
+\item{D}{The treatment observation, a vector of length \eqn{n}.}
 
-\item{Z}{A matrix of instruments.}
+\item{Z}{The instrument observation of dimension \eqn{n \times p_z}.}
 
-\item{X}{A matrix of exogenous covariates.}
+\item{X}{The covariates observation of dimension \eqn{n \times p_x}.}
 
-\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
+\item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
-\item{robust}{If \code{TRUE}, fit the model in heteroscedastic way (default=\code{TRUE})}
+\item{method}{The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})}
+
+\item{robust}{If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})}
 
 \item{Sampling}{If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})}
 
@@ -52,13 +54,13 @@ SearchingSampling(
 \item{filtering}{Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.}
 }
 \value{
-\item{ci}{a two dimensional numeric vector denoting the 1-alpha confidence intervals for betaHat with lower and upper endpoints.}
-\item{check}{True or False indicating whether the plurality rule  is satisfied or not emprically.}
-\item{VHat}{a numeric vector denoting the set of valid and relevant IVs.}
-\item{SHat}{a numeric vector denoting the set of relevant IVs.}
+\item{ci}{1-alpha confidence interval for beta.}
+\item{check}{Indicator for whether the plurality rul is satisfied.}
+\item{SHat}{The set of relevant IVs.}
+\item{VHat}{The initial set of relevant and valid IVs.}
 }
 \description{
-Conduct Searching-Sampling method, which can construct uniformly valid confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
+Construct Searching and Sampling confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
 }
 \examples{
 \dontrun{
@@ -71,5 +73,10 @@ summary(Searching.model)
 SS.model <- SearchingSampling(Y,D,Z,X)
 summary(SS.model)
 
+}
+}
+\references{
+{
+Guo, Z. (2021), Causal Inference with Invalid Instruments: Post-selection Problems and A Solution Using Searching and Sampling, Preprint \emph{arXiv:2104.06911}. \cr
 }
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/endo-test.R
 \name{endo.test}
 \alias{endo.test}
-\title{Endogeneity-test}
+\title{Endogeneity test in high dimensions}
 \usage{
 endo.test(
   Y,

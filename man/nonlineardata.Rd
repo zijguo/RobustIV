@@ -25,7 +25,7 @@ The Framingham Heart Study data supported by the National Heart, Lung, and Blood
 data(nonlineardata)
 }
 \description{
-Psuedo data of the Framingham Heart Study data provided by Youjin lee. This was created by adding some random terms to original data.
+Psuedo data of the Framingham Heart Study data provided by Youjin lee.
 }
 \examples{
 data(nonlineardata)

@@ -9,6 +9,9 @@
 \arguments{
 \item{object}{TSHT object}
 }
+\value{
+
+}
 \description{
 Summary of TSHT
 }

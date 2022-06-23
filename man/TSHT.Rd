@@ -62,6 +62,9 @@ X <- mroz[,"age"]
 TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 summary(TSHT.model)
 }
-
-
+}
+\references{
+{
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
+}
 }

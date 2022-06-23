@@ -2,66 +2,63 @@
 % Please edit documentation in R/SpotIV.R
 \name{SpotIV}
 \alias{SpotIV}
-\title{SpotIV method for causal inference in nonlinear outcome models}
+\title{SpotIV method for causal inference in semi-parametric outcome model}
 \usage{
 SpotIV(
   Y,
   D,
   Z,
   X = NULL,
-  bs.Niter = 40,
-  M = 2,
-  M.est = TRUE,
   invalid = TRUE,
   intercept = TRUE,
   d1,
   d2,
   w0,
-  bw = NULL,
-  parallel = FALSE
+  M.est = TRUE,
+  bs.Niter = 40,
+  M = 2,
+  bw = NULL
 )
 }
 \arguments{
-\item{Y}{A numeric vector of outcomes.}
+\item{Y}{The outcome observation, a vector of length \eqn{n}.}
 
-\item{D}{A continuous vector of endogenous variables.}
+\item{D}{The treatment observation, a vector of length \eqn{n}.}
 
-\item{Z}{A matrix of instruments.}
+\item{Z}{The instrument observation of dimension \eqn{n \times p_z}.}
 
-\item{X}{A matrix of exogenous covariates.}
-
-\item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval.}
-
-\item{M}{The dimension of indices in the outcome model, from 1 to 3. Default is 2.}
-
-\item{M.est}{True or False, whether estimate M based on BIC. (default = TRUE)}
+\item{X}{The covariates observation of dimension \eqn{n \times p_x}.}
 
 \item{invalid}{If TRUE, the method is robust to the presence of possibly invalid IVs; If FALSE, the method assumes all IVs to be valid. (default = TRUE)}
 
 \item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
 
-\item{d1}{a treatment value for computing CATE(d1,d2|w0).}
+\item{d1}{A treatment value for computing CATE(d1,d2|w0).}
 
-\item{d2}{a treatment value for computing CATE(d1,d2|w0).}
+\item{d2}{A treatment value for computing CATE(d1,d2|w0).}
 
-\item{w0}{a value of measured covariates and instruments for computing CATE(d1,d2|w0).}
+\item{w0}{A value of measured covariates and instruments for computing CATE(d1,d2|w0).}
 
-\item{bw}{a (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
+\item{M.est}{Whether estimate M based on BIC. (default = TRUE)}
 
-\item{parallel}{True or False indicating whether to use parallel computing (maybe useless on Windows). (default = FALSE)}
+\item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval.}
+
+\item{M}{The dimension of indices in the outcome model, from 1 to 3. Default is 2.}
+
+\item{bw}{A (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.}
 }
 \value{
-\code{ProbitControl} returns an object of class "SpotIV".
+\code{SpotIV} returns an object of class "SpotIV".
     An object class "SpotIV" is a list containing the following components:
     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
-    \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard deviation of cateHat.}
+    \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard error of cateHat.}
     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
     \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
 }
 \description{
-Perform causal inference in semi-parametric outcome model with possibly invalid IVs under the majority rule using SpotIV method.
+Perform causal inference in the semi-parametric outcome model with possibly invalid IVs.
 }
 \examples{
 \dontrun{
@@ -76,6 +73,9 @@ SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
 summary(SpotIV.model)
 }
 
-
-
+}
+\references{
+{
+Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
+}
 }

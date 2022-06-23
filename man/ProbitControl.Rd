@@ -9,40 +9,40 @@ ProbitControl(
   D,
   Z,
   X = NULL,
+  invalid = FALSE,
+  intercept = TRUE,
   d1 = NULL,
   d2 = NULL,
   w0 = NULL,
-  bs.Niter = 40,
-  intercept = TRUE,
-  method = "majority"
+  bs.Niter = 40
 )
 }
 \arguments{
-\item{Y}{A vector of outcomes.}
+\item{Y}{The outcome observation, a vector of length \eqn{n}.}
 
-\item{D}{A continuous vector of endogenous variables.}
+\item{D}{The treatment observation, a vector of length \eqn{n}.}
 
-\item{Z}{A matrix of instruments.}
+\item{Z}{The instrument observation of dimension \eqn{n \times p_z}.}
 
-\item{X}{A matrix of exogenous covariates.}
+\item{X}{The covariates observation of dimension \eqn{n \times p_x}.}
 
-\item{d1}{a treatment value for computing CATE(d1,d2|w0).}
+\item{invalid}{If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})}
 
-\item{d2}{a treatment value for computing CATE(d1,d2|w0).}
+\item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
-\item{w0}{a vector for computing CATE(d1,d2|w0).}
+\item{d1}{A treatment value for computing CATE(d1,d2|w0).}
+
+\item{d2}{A treatment value for computing CATE(d1,d2|w0).}
+
+\item{w0}{A vector for computing CATE(d1,d2|w0).}
 
 \item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval.}
-
-\item{intercept}{Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.}
-
-\item{method}{If 'majority', the method is robust to the presence of possibly invalid IVs; If 'valid', the method assumes all IVs to be valid. (default = 'majority')}
 }
 \value{
 \code{ProbitControl} returns an object of class "SpotIV".
     An object class "SpotIV" is a list containing the following components:
     \item{\code{betaHat}}{The estimate of causal parameter.}
-    \item{\code{beta.sdHat}}{The estimated standard deviation of betaHat.}
+    \item{\code{beta.sdHat}}{The estimated standard error of betaHat.}
     \item{\code{cateHat}}{The estimate of CATE(d1,d2|w0).}
     \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
     \item{\code{SHat}}{The estimated set of relevant IVs.}
@@ -50,7 +50,7 @@ ProbitControl(
     \item{\code{Maj.pass}}{Whether the majority rule test is passed or not.}
 }
 \description{
-Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using SpotIV method.
+Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using \code{SpotIV}.
 }
 \examples{
 \dontrun{
@@ -65,6 +65,9 @@ Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
 summary(Probit.model)
 }
 
-
-
+}
+\references{
+{
+Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
+}
 }

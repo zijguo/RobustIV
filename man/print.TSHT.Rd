@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{TSHT object}
 }
+\value{
+
+}
 \description{
 print of TSHT
 }
