@@ -10,10 +10,10 @@ endo.test(
   Z,
   X,
   intercept = TRUE,
-  alpha = 0.05,
-  method = c("Fast.DeLasso", "DeLasso", "OLS"),
   invalid = FALSE,
-  voting = "MaxClique"
+  method = c("Fast.DeLasso", "DeLasso", "OLS"),
+  voting = c("MaxClique", "MP"),
+  alpha = 0.05
 )
 }
 \arguments{
@@ -27,21 +27,21 @@ endo.test(
 
 \item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
-\item{alpha}{The significance level for the confidence interval. (default = 0.05)}
-
-\item{method}{The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = "Fast.DeLasso")}
-
 \item{invalid}{If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})}
 
-\item{voting}{The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')}
+\item{method}{The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})}
+
+\item{voting}{The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})}
+
+\item{alpha}{The significance level for the confidence interval. (default = \code{0.05})}
 }
 \value{
-\code{endo.test} returns an object of class "endotest".
-    An object class "endotest" is a list containing the following components:
-   \item{\code{Q}}{Ttest statistic.}
-   \item{\code{Sigma12}}{Estimated covaraince.}
-   \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
-   \item{\code{alpha}}{The significance level.}
+\code{endo.test} returns an object of class "endotest", which is a list containing the following components:
+   \item{\code{Q}}{Test statistic.}
+   \item{\code{Sigma12}}{Estimated covaraince of the regression errors.}
+   \item{\code{VHat}}{The set of vaild IVs.}
+   \item{\code{p.value}}{The p-value of the endogeneity test.}
+   \item{\code{check}}{Indicator for whether \eqn{H_0:\Sigma_{12}=0} is rejected or not.}
 }
 \description{
 Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
@@ -57,7 +57,6 @@ X = matrix(rnorm(n*px),n,px)
 epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 D =  0.5 + Z \%*\% gamma + X \%*\% psi + epsilon[,1]
 Y = -0.5 + Z \%*\% alpha + D * beta + X \%*\% phi + epsilon[,2]
-TSHT(Y,D,Z,X, method = "DeLasso")
 endo.test.model <- endo.test(Y,D,Z,X)
 summary(endo.test.model)
 }

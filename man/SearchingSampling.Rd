@@ -33,34 +33,38 @@ SearchingSampling(
 
 \item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
-\item{method}{The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})}
+\item{method}{The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})}
 
-\item{robust}{If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})}
+\item{robust}{If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors.  (default = \code{FALSE})}
 
 \item{Sampling}{If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})}
 
-\item{alpha}{Significance level (default=0.05)}
+\item{alpha}{The significance level (default=\code{0.05})}
 
-\item{CI.init}{Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})}
+\item{CI.init}{An initial range for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})}
 
-\item{a}{Grid size for constructing beta grids (default=0.6)}
+\item{a}{Grid size for constructing beta grids. (default=\code{0.6})}
 
-\item{rho}{Initial value constructed for sampling method (default=\code{NULL}). It works only for Sampling method.}
+\item{rho}{Initial value constructed for sampling method. (default=\code{NULL})}
 
-\item{M}{Sampling times (default = 1000). It works only for Sampling method.}
+\item{M}{Re-sampling size. (default = \code{1000})}
 
-\item{prop}{Proportion of intervals kept when sampling (default=0.1). It works only for Sampling method.}
+\item{prop}{Proportion of non-empty intervals for sampling. (default=\code{0.1})}
 
-\item{filtering}{Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.}
+\item{filtering}{Filtering the re-sampled data or not. (default=\code{TRUE})}
 }
 \value{
+\code{SearchingSampling} returns an object of class "SS", which is a list containing the following components:
 \item{ci}{1-alpha confidence interval for beta.}
-\item{check}{Indicator for whether the plurality rul is satisfied.}
 \item{SHat}{The set of relevant IVs.}
 \item{VHat}{The initial set of relevant and valid IVs.}
+\item{check}{Indicator for whether the plurality rule is satisfied.}
 }
 \description{
-Construct Searching and Sampling confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
+Construct Searching and Sampling confidence intervals for the causal effect, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings. It is robust to the mistakes in separating valid and invalid instruments.
+}
+\details{
+When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
 }
 \examples{
 \dontrun{

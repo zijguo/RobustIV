@@ -7,26 +7,28 @@
 pretest(formula, alpha = 0.05)
 }
 \arguments{
-\item{formula}{a formula describing the model to be fitted. For example, the formula \code{Y ~ D + I(D^2)+X|Z+X} describes the model where
-\eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
-and
-\eqn{D = \gamma_0 + Z\gamma_1 + X\psi + v}.
-Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the exogenous covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
-the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.}
+\item{formula}{A formula describing the model to be fitted.}
 
-\item{alpha}{The significant level. (default = 0.05)}
+\item{alpha}{The significant level. (default = \code{0.05})}
 }
 \value{
-\code{pretest} returns an object of class "pretest".
-    An object class "pretest" is a list containing the following components:
+\code{pretest} returns an object of class "pretest", which is a list containing the following components:
    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
    \item{\code{Hausman.stat}}{The Hausman test statistic used to test the validity of control function.}
    \item{\code{p.value}}{The p-value of Hausman test.}
-   \item{\code{cf.check}}{Whether the control function is valid or not.}
+   \item{\code{cf.check}}{Indicator for whether the control function is valid or not.}
 }
 \description{
 This function implements the pretest approach  for estimation and inference of nonlinear treatment effects.
+}
+\details{
+For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
+\eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
+and
+\eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2+X\psi + v}.
+Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
+the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
 }
 \examples{
 \dontrun{

@@ -10,10 +10,10 @@ TSHT(
   Z,
   X,
   intercept = TRUE,
-  alpha = 0.05,
   method = c("OLS", "DeLasso", "Fast.DeLasso"),
-  voting = "MaxClique",
-  robust = FALSE
+  voting = c("MaxClique", "MP", "Conservative"),
+  robust = FALSE,
+  alpha = 0.05
 )
 }
 \arguments{
@@ -27,24 +27,23 @@ TSHT(
 
 \item{intercept}{Whether the intercept is included. (default = \code{TRUE})}
 
-\item{alpha}{The significance level for the confidence interval. (default = 0.05)}
-
 \item{method}{The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})}
 
-\item{voting}{The voting option used to estimate valid IVs. 'MP' stands for majority and plurality voting, 'MaxClique' stands for finding maximal clique in the IV voting matrix, and 'Conservative' stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= 'MaxClique').}
+\item{voting}{The voting option used to estimate valid IVs. \code{'MP'} stands for majority and plurality voting, \code{'MaxClique'} stands for finding maximal clique in the IV voting matrix, and \code{'Conservative'} stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= \code{'MaxClique'}).}
 
-\item{robust}{If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})}
+\item{robust}{If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})}
+
+\item{alpha}{The significance level for the confidence interval. (default = \code{0.05})}
 }
 \value{
-\code{TSHT} returns an object of class "TSHT".
-    An object class "TSHT" is a list containing the following components:
+\code{TSHT} returns an object of class "TSHT", which is a list containing the following components:
     \item{\code{betaHat}}{The estimate of treatment effect.}
     \item{\code{beta.sdHat}}{The estimated standard error of \code{betaHat}.}
     \item{\code{ci}}{The 1-alpha confidence interval for \code{beta}.}
     \item{\code{SHat}}{The set of relevant IVs.}
     \item{\code{VHat}}{The set of relevant and valid IVs.}
     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
-    \item{\code{check}}{Whether the majority rule test is passed or not.}
+    \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
     \item{\code{beta.clique}}{The estimates of treatment effect from each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
     \item{\code{beta.sd.clique}}{The estimated standard deviation of \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
     \item{\code{CI.clique}}{The 1-alpha confidence interval for \code{beta} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
@@ -52,6 +51,11 @@ TSHT(
 }
 \description{
 Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+}
+\details{
+When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat} is estimated from the union of maximum cliques, so the reliability of the estimate may be slightly reduced.
+
+When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
 }
 \examples{
 \dontrun{
