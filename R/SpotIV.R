@@ -303,7 +303,7 @@ Spot.boot.fun<-function(data, M, d1, d2,w0, SHat,
     beta.bs<-SIR.bs$theta.hat[1,]
     pi.bs<-matrix(0,nrow=ncol(Z), ncol=M)
     pi.bs[V,]<-0
-    pi.bs[-V,]<-SIR.bs$theta.hat[2:(pz-length(V)+1),]
+    pi.bs[-V,]<-SIR.bs$theta.hat[2:(ncol(Z)-length(V)+1),]
   }
   asf.dw<-Spot.ASF.est(d1=d1,d2=d2, z0=w0, beta.hat= beta.bs, pi.hat= pi.bs,
                   Y=Y, D=D, Z=Z, v.hat=D-Z%*%gam.bs, bw.z=bw.z)
