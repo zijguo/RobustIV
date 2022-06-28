@@ -49,6 +49,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   # Check and Clean Input Type #
   # Check Y
   method = match.arg(method)
+  voting = match.arg(voting)
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -89,7 +90,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
   stopifnot(method=='OLS' | method=='DeLasso' | method =="Fast.DeLasso")
-  stopifnot(voting=='MaxClique' | method=='MP')
+  stopifnot(voting=='MaxClique' | voting=='MP')
 
   # Derive Inputs for Endogeneity test
   n = length(Y); pz=ncol(Z)
