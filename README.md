@@ -26,23 +26,13 @@ We use Mroz (1987) data to estimate the effect of education on log earnings. Her
 Relevant Instruments: motheduc fatheduc huseduc 
 
 Valid Instruments: motheduc fatheduc huseduc 
- 
-Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.08029083 
 
+Standard error of BetaHat: 0.02186046 
+
 Confidence interval for Beta: [0.03744511,0.1231365]
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Results from each maximum clique
-
-Maximum clique 1 : motheduc fatheduc huseduc 
-
-BetaHat from the clique: 0.08029083 
-
-Confidence interval for Beta from the clique: [0.03744511,0.1231365]
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 ```
 ### Reference
@@ -60,24 +50,20 @@ Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals fo
 
 Initial set of Valid Instruments: motheduc fatheduc huseduc 
 
-Relevant Instruments: motheduc fatheduc huseduc 
- 
-Thus, Majority rule holds. 
+Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval of BetaHat: [-0.2778141,0.2496146]
+Confidence Interval for Beta: [-0.2850882,0.2687119]
 
 > SS.model <- SearchingSampling(Y,D,Z,X)
 > summary(SS.model)
 
 Initial set of Valid Instruments: motheduc fatheduc huseduc 
 
-Relevant Instruments: motheduc fatheduc huseduc 
- 
-Thus, Majority rule holds. 
+Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval of BetaHat: [-0.1195855,0.1705003]
+Confidence Interval for Beta: [-0.153231,0.1632262]
 ```
 ### Reference
 Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
@@ -150,7 +136,6 @@ causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), T
 > w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 > SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5], invalid = TRUE)
 > summary(SpotIV.model)
-
 Relevant Instruments: motheduc fatheduc huseduc 
 
 Valid Instruments: motheduc fatheduc huseduc 
@@ -162,11 +147,13 @@ BetaHat: 0.8791451
 
 CATEHat: 0.1298192 
 
-Confidence Interval for CATE: [-0.7500586,1.009697]
+Standard error of CATEHat: 0.4244563 
+
+95% Confidence Interval for CATE: [-0.7020999,0.9617384]
 ```
 
 ```R
-> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0, invalid = TRUE)
+> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0,invalid = T)
 > summary(Probit.model)
 
 Relevant Instruments: motheduc fatheduc huseduc 
@@ -178,15 +165,21 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 BetaHat: 0.2118909 
 
+Standard error of BetaHat: 0.09269852 
+
+95% Confidence Interval for Beta: [0.0302051,0.3935766]
+
 CATEHat: 0.08435024 
 
-Confidence Interval for CATE: [0.02950681,0.1391937]
+Standard error of CATEHat: 0.03646787 
+
+95% Confidence Interval for CATE: [0.01287454,0.1558259]
 ```
 
 ### Reference
 Li, S., Guo, Z. (2020), [Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables](https://arxiv.org/abs/2010.09922), Preprint arXiv:2010.09922.
 
-# High-dimensional examples with simulation
+# High-dimensional examples (Simulated data)
 In this section, we consider the following linear models.
 
 Y = D\beta + Z\alpha + X\phi +u 
@@ -206,28 +199,19 @@ D = Z\gamma + X\psi + v
 > epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 > D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
 > Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
-> summary(TSHT(Y,D,Z,X, method = "Fast.DeLasso"))
+> TSHT.model <- TSHT(Y,D,Z,X,method = "Fast.DeLasso")
+> summary(TSHT.model)
 
 Relevant Instruments: 1 2 3 4 5 6 7 8 9 10 
 
 Valid Instruments: 4 5 6 7 8 9 10 
- 
-Thus, Majority rule holds. 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 BetaHat: 0.9893991 
 
+Standard error of BetaHat: 0.01587193 
+
 Confidence interval for Beta: [0.9582907,1.020508]
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Results from each maximum clique
-
-Maximum clique 1 : 4 5 6 7 8 9 10 
-
-BetaHat from the clique: 0.9893991 
-
-Confidence interval for Beta from the clique: [0.9582907,1.020508]
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 ```
 
