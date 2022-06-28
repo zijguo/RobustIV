@@ -6,26 +6,29 @@
 #' @param Z The instrument observation of dimension \eqn{n \times p_z}.
 #' @param X The covariates observation of dimension \eqn{n \times p_x}.
 #' @param intercept Whether the intercept is included. (default = \code{TRUE})
-#' @param alpha The significance level for the confidence interval. (default = 0.05)
 #' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})
-#' @param voting The voting option used to estimate valid IVs. 'MP' stands for majority and plurality voting, 'MaxClique' stands for finding maximal clique in the IV voting matrix, and 'Conservative' stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= 'MaxClique').
-#' @param robust If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})
+#' @param voting The voting option used to estimate valid IVs. \code{'MP'} stands for majority and plurality voting, \code{'MaxClique'} stands for finding maximal clique in the IV voting matrix, and \code{'Conservative'} stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= \code{'MaxClique'}).
+#' @param robust If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})
+#' @param alpha The significance level for the confidence interval. (default = \code{0.05})
 #'
+#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat} is estimated from the union of maximum cliques, so the reliability of the estimate may be slightly reduced.
+#
 #' @return
 #'
-#'     \code{TSHT} returns an object of class "TSHT".
-#'     An object class "TSHT" is a list containing the following components:
+#'     \code{TSHT} returns an object of class "TSHT", which is a list containing the following components:
 #'     \item{\code{betaHat}}{The estimate of treatment effect.}
 #'     \item{\code{beta.sdHat}}{The estimated standard error of \code{betaHat}.}
 #'     \item{\code{ci}}{The 1-alpha confidence interval for \code{beta}.}
 #'     \item{\code{SHat}}{The set of relevant IVs.}
 #'     \item{\code{VHat}}{The set of relevant and valid IVs.}
 #'     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
-#'     \item{\code{check}}{Whether the majority rule test is passed or not.}
+#'     \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
 #'     \item{\code{beta.clique}}{The estimates of treatment effect from each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
 #'     \item{\code{beta.sd.clique}}{The estimated standard deviation of \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
 #'     \item{\code{CI.clique}}{The 1-alpha confidence interval for \code{beta} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
 #'     \item{\code{max.clique}}{The maximum cliques voted as valid IVs. Only returns when \code{voting} is \code{'MaxClique'}}
+#'
+#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
 #'
 #' @export
 #'
@@ -41,8 +44,8 @@
 #' @references {
 #' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
 #' }
-TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
-                 method=c("OLS","DeLasso","Fast.DeLasso"), voting = 'MaxClique', robust = FALSE) {
+TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"),
+                 voting = c('MaxClique','MP','Conservative'), robust = FALSE, alpha=0.05) {
   stopifnot(is.logical(robust))
   method = match.arg(method)
   if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
@@ -50,6 +53,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, alpha=0.05,
     cat(sprintf("For methods %s, robust is set FALSE,
                 as we only consider homoscedastic noise.\n", method))
   }
+  voting = match.arg(voting)
   if (robust == TRUE) {
     TSHTObject <- TSHT_hetero(Y = Y,D = D,Z = Z,X = X,intercept = intercept, alpha = alpha,
                                 method = method, voting = voting)
@@ -363,32 +367,23 @@ TSHT.VHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD,
 #' @return
 #' @export
 summary.TSHT <- function(object,...){
-  return(object)
-}
-
-#' print of TSHT
-#'
-#' @param x TSHT object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.TSHT <- function(x,...){
-  TSHT <- x
+  TSHT <- object
   cat("\nRelevant Instruments:", TSHT$SHat, "\n");
-  cat("\nValid Instruments:", TSHT$VHat,"\n","\nThus, Majority rule",ifelse(TSHT$check,"holds.","does not hold."), "\n");
+  cat("\nValid Instruments:", TSHT$VHat,"\n");
   cat(rep("_", 30), "\n")
   cat("\nBetaHat:",TSHT$betaHat,"\n");
+  cat("\nStandard error of BetaHat:",TSHT$beta.sdHat,"\n");
   cat("\nConfidence interval for Beta: [", TSHT$ci[1], ",", TSHT$ci[2], "]", "\n", sep = '');
-  if (!is.null(TSHT$beta.clique)) {
+  if (!is.null(TSHT$beta.clique)&&!(nrow(TSHT$max.clique)==1)) {
     cat(rep("_", 30), "\n")
     cat("\nResults from each maximum clique\n")
     for (i in 1:nrow(TSHT$max.clique)) {
       cat("\nMaximum clique", i,":", TSHT$max.clique[i,], "\n");
       cat("\nBetaHat from the clique:",TSHT$beta.clique[i,],"\n");
+      cat("\nStandard error of BetaHat from the clique:",TSHT$beta.sd.clique[i,],"\n");
       cat("\nConfidence interval for Beta from the clique: [", TSHT$CI.clique[i,1], ",", TSHT$CI.clique[i, 2], "]", "\n", sep = '');
       cat(rep("_", 30), "\n")
     }
   }
-
 }
+

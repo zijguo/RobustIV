@@ -1,20 +1,22 @@
 #' @title Control-Function
 #' @description Implement the control function method for estimation and inference of nonlinear treatment effects.
-#' @param formula A formula describing the model to be fitted. For example, the formula \code{Y ~ D + I(D^2)+X|Z+X} describes the model where
-#' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
-#' and
-#' \eqn{D = \gamma_0 + Z\gamma_1 + X\psi + v}.
-#' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
-#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-#' @param d1 The baseline treatment value.
-#' @param d2 The targeted treatment value.
+#' @param formula A formula describing the model to be fitted.
+#' @param d1 The transformation of baseline treatment value.
+#' @param d2 The transformation of target treatment value.
 #'
 #' @return
-#'    \code{cf} returns an object of class "cf".
-#'     An object class "cf" is a list containing the following components:
+#'    \code{cf} returns an object of class "cf", which is a list containing the following components:
 #'    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
-#'    \item{\code{CausalEffect}}{The causal effect of increasing the treatment from \code{d1} to \code{d2}. If one of \code{d1} or \code{d2} is \code{NULL}, it returns \code{NULL}.}
+#'    \item{\code{CausalEffect}}{The causal effect of increasing the treatment from \code{d1} to \code{d2}.}
+#'
+#' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
+#' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
+#' and
+#' \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2 + X\psi + v}.
+#' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
+#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
+#' If one of \code{d1} or \code{d2} is \code{NULL}, \code{CausalEffect} returns \code{NULL}.
 #' @export
 #'
 #'
@@ -180,17 +182,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
 #' @return
 #' @export
 summary.cf<- function(object,...){
-  return(object)
-}
-#' Summary of cf
-#'
-#' @param x cf object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.cf<- function(x,...){
-  cf <- x
+  cf <- object
   cat(rep("_", 30), "\n")
   cat("\nCoefficients of Control Function Estimators:\n\n")
   coeff <- cf$coefficients
@@ -210,21 +202,23 @@ print.cf<- function(x,...){
 #' @title Prestest estimator
 #' @description This function implements the pretest approach  for estimation and inference of nonlinear treatment effects.
 #'
-#' @param formula a formula describing the model to be fitted. For example, the formula \code{Y ~ D + I(D^2)+X|Z+X} describes the model where
+#' @param formula A formula describing the model to be fitted.
+#' @param alpha The significant level. (default = \code{0.05})
+#'
+#' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
 #' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
 #' and
-#' \eqn{D = \gamma_0 + Z\gamma_1 + X\psi + v}.
-#' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the exogenous covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
+#' \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2+X\psi + v}.
+#' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
 #' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-#' @param alpha The significant level. (default = 0.05)
+
 #' @return
-#'    \code{pretest} returns an object of class "pretest".
-#'     An object class "pretest" is a list containing the following components:
+#'    \code{pretest} returns an object of class "pretest", which is a list containing the following components:
 #'    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
 #'    \item{\code{Hausman.stat}}{The Hausman test statistic used to test the validity of control function.}
 #'    \item{\code{p.value}}{The p-value of Hausman test.}
-#'    \item{\code{cf.check}}{Whether the control function is valid or not.}
+#'    \item{\code{cf.check}}{Indicator for whether the control function is valid or not.}
 #' @export
 #'
 #'
@@ -288,17 +282,7 @@ pretest <- function(formula,alpha = 0.05){
 #' @return
 #' @export
 summary.pretest<- function(object,...){
-  return(object)
-}
-#' Summary of pretest
-#'
-#' @param x pretest object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.pretest<- function(x,...){
-  pretest <- x
+  pretest <- object
   cat(rep("_", 30), "\n")
   cat("\nHausman Statistic : ",pretest$Hausman.stat,"\n")
   cat("\nP value = ",pretest$p.value,"\n")

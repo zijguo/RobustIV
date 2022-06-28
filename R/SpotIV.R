@@ -4,25 +4,24 @@
 #' @param D The treatment observation, a vector of length \eqn{n}.
 #' @param Z The instrument observation of dimension \eqn{n \times p_z}.
 #' @param X The covariates observation of dimension \eqn{n \times p_x}.
-#' @param invalid If TRUE, the method is robust to the presence of possibly invalid IVs; If FALSE, the method assumes all IVs to be valid. (default = TRUE)
-#' @param intercept Should the intercept be included? Default is \code{TRUE} and if so, you do not need to add a column of 1s in X.
+#' @param intercept Whether the intercept is included. (default = \code{TRUE})
+#' @param invalid If TRUE, the method is robust to the presence of possibly invalid IVs; If FALSE, the method assumes all IVs to be valid. (default = \code{FALSE})
 #' @param d1 A treatment value for computing CATE(d1,d2|w0).
 #' @param d2 A treatment value for computing CATE(d1,d2|w0).
 #' @param w0  A value of measured covariates and instruments for computing CATE(d1,d2|w0).
-#' @param M.est Whether estimate M based on BIC. (default = TRUE)
-#' @param M The dimension of indices in the outcome model, from 1 to 3. Default is 2.
-#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
-#' @param bw  A (M+1) by 1 vector bandwidth specification. Default is NULL and the bandwidth is chosen by rule of thumb.
+#' @param M.est If \code{TRUE}, estimate \code{M} based on BIC, otherwise \code{M} is not estimated and input or default value of \code{M} is used. (default = \code{TRUE})
+#' @param M The dimension of indices in the outcome model, from 1 to 3. (default = \code{2})
+#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval. (default = \code{40})
+#' @param bw  A (M+1) by 1 vector bandwidth specification. (default = \code{NULL})
 
 #' @return
-#'     \code{SpotIV} returns an object of class "SpotIV".
-#'     An object class "SpotIV" is a list containing the following components:
-#'     \item{\code{betaHat}}{a numeric scalar denoting the estimate of beta.}
-#'     \item{\code{cateHat}}{a numeric scalar denoting the estimate of CATE(d1,d2|w0).}
-#'     \item{\code{cate.sdHat}}{a numeric scalar denoting the estimated standard error of cateHat.}
-#'     \item{\code{SHat}}{a numeric vector denoting the set of relevant IVs.}
-#'     \item{\code{VHat}}{a numeric vector denoting the set of relevant and valid IVs.}
-#'     \item{\code{Maj.pass}}{True or False indicating whether the majority rule test is passed or not.}
+#'     \code{SpotIV} returns an object of class "SpotIV", which "SpotIV" is a list containing the following components:
+#'     \item{\code{betaHat}}{The estimate of the model parameter in front of the treatment.}
+#'     \item{\code{cateHat}}{The estimate of CATE(d1,d2|w0).}
+#'     \item{\code{cate.sdHat}}{The estimated standard error of cateHat.}
+#'     \item{\code{SHat}}{The set of relevant IVs.}
+#'     \item{\code{VHat}}{The set of relevant and valid IVs.}
+#'     \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
 #' @import dr
 #' @import orthoDr
 #' @import foreach
@@ -50,8 +49,8 @@
 #'
 #'
 
-SpotIV<- function(Y, D, Z, X=NULL, invalid=TRUE, intercept=TRUE, d1, d2 , w0,
-                  M.est=TRUE, bs.Niter=40, M=2, bw=NULL){
+SpotIV<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,  d1, d2 , w0,
+                  M.est=TRUE, M=2, bs.Niter=40, bw=NULL){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))
   if (is.vector(Y)) {
@@ -184,26 +183,22 @@ SpotIV<- function(Y, D, Z, X=NULL, invalid=TRUE, intercept=TRUE, d1, d2 , w0,
 #' @return
 #' @export
 summary.SpotIV <- function(object,...){
-  return(object)
-}
-
-#' Summary of SpotIV
-#'
-#' @param x SpotIV object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.SpotIV <- function(x,...){
-  SpotIV <- x
+  SpotIV <- object
   cat("\nRelevant Instruments:", SpotIV$SHat, "\n");
   cat("\nValid Instruments:", SpotIV$VHat,"\n","\nThus, Majority rule",ifelse(SpotIV$Maj.pass,"holds.","does not hold."), "\n");
   cat(rep("_", 30), "\n")
   cat("\nBetaHat:",SpotIV$betaHat,"\n");
+  if (!is.null(SpotIV$beta.sdHat)) {
+    cat("\nStandard error of BetaHat:",SpotIV$beta.sdHat,"\n");
+    ci.beta <- c(SpotIV$betaHat-qnorm(0.975)*SpotIV$beta.sdHat,SpotIV$betaHat+qnorm(0.975)*SpotIV$beta.sdHat)
+    cat("\n95% Confidence Interval for Beta: [", ci.beta[1], ",", ci.beta[2], "]", "\n", sep = '');
+  }
   cat("\nCATEHat:",SpotIV$cateHat,"\n");
+  cat("\nStandard error of CATEHat:",SpotIV$cate.sdHat,"\n");
   ci <- c(SpotIV$cateHat-qnorm(0.975)*SpotIV$cate.sdHat,SpotIV$cateHat+qnorm(0.975)*SpotIV$cate.sdHat)
-  cat("\nConfidence Interval for CATE: [", ci[1], ",", ci[2], "]", "\n", sep = '');
+  cat("\n95% Confidence Interval for CATE: [", ci[1], ",", ci[2], "]", "\n", sep = '');
 }
+
 
 SIR.est<- function(X.cov,Y, M=2, M.est=TRUE){
   p<- ncol(X.cov)

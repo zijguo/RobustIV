@@ -1,27 +1,26 @@
 #' @title Causal inference in probit outcome models with possibly invalid IVs
-#' @description Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule using \code{SpotIV}.
+#' @description Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule.
 #'
 #' @param Y The outcome observation, a vector of length \eqn{n}.
 #' @param D The treatment observation, a vector of length \eqn{n}.
 #' @param Z The instrument observation of dimension \eqn{n \times p_z}.
 #' @param X The covariates observation of dimension \eqn{n \times p_x}.
-#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
 #' @param intercept Whether the intercept is included. (default = \code{TRUE})
+#' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
 #' @param d1 A treatment value for computing CATE(d1,d2|w0).
 #' @param d2 A treatment value for computing CATE(d1,d2|w0).
 #' @param w0  A vector for computing CATE(d1,d2|w0).
 #' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
 #'
 #' @return
-#'     \code{ProbitControl} returns an object of class "SpotIV".
-#'     An object class "SpotIV" is a list containing the following components:
-#'     \item{\code{betaHat}}{The estimate of causal parameter.}
+#'     \code{ProbitControl} returns an object of class "SpotIV", which is a list containing the following components:
+#'     \item{\code{betaHat}}{The estimate of the model parameter in front of the treatment.}
 #'     \item{\code{beta.sdHat}}{The estimated standard error of betaHat.}
 #'     \item{\code{cateHat}}{The estimate of CATE(d1,d2|w0).}
 #'     \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
 #'     \item{\code{SHat}}{The estimated set of relevant IVs.}
 #'     \item{\code{VHat}}{The estimated set of relevant and valid IVs.}
-#'     \item{\code{Maj.pass}}{Whether the majority rule test is passed or not.}
+#'     \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
 #'
 #' @importFrom stats binomial glm median pnorm sd
 #' @export
@@ -50,7 +49,7 @@
 
 
 
-ProbitControl<- function(Y, D, Z, X=NULL, invalid=FALSE, intercept=TRUE,
+ProbitControl<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,
                          d1=NULL, d2=NULL , w0=NULL, bs.Niter=40){
   stopifnot(!missing(Y),(is.numeric(Y) || is.logical(Y)),is.vector(Y)||(is.matrix(Y) || is.data.frame(Y)) && ncol(Y) == 1)
   stopifnot(all(!is.na(Y)))

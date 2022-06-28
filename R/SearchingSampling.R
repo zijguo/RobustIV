@@ -1,27 +1,30 @@
 #' @title Searching-Sampling
-#' @description Construct Searching and Sampling confidence intervals for the causal effect, which are robust to the mistakes in separating valid and invalid instruments.
+#' @description Construct Searching and Sampling confidence intervals for the causal effect, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings. It is robust to the mistakes in separating valid and invalid instruments.
 #'
 #' @param Y The outcome observation, a vector of length \eqn{n}.
 #' @param D The treatment observation, a vector of length \eqn{n}.
 #' @param Z The instrument observation of dimension \eqn{n \times p_z}.
 #' @param X The covariates observation of dimension \eqn{n \times p_x}.
 #' @param intercept Whether the intercept is included. (default = \code{TRUE})
-#' @param method The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})
-#' @param robust If \code{TRUE}, the method is robust to heteroskedasticity errors. If \code{FALSE}, the method assumes homoskedasticity errors. When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. (default = \code{FALSE})
+#' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"OLS"})
+#' @param robust If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors.  (default = \code{FALSE})
 #' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
-#' @param alpha Significance level (default=0.05)
-#' @param CI.init Initial interval for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
-#' @param a Grid size for constructing beta grids (default=0.6)
-#' @param rho Initial value constructed for sampling method (default=\code{NULL}). It works only for Sampling method.
-#' @param M Sampling times (default = 1000). It works only for Sampling method.
-#' @param prop Proportion of intervals kept when sampling (default=0.1). It works only for Sampling method.
-#' @param filtering Filtering sampling or not (default=\code{TRUE}). It works only for Sampling method.
+#' @param alpha The significance level (default=\code{0.05})
+#' @param CI.init An initial range for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
+#' @param a Grid size for constructing beta grids. (default=\code{0.6})
+#' @param rho Initial value constructed for sampling method. (default=\code{NULL})
+#' @param M Re-sampling size. (default = \code{1000})
+#' @param prop Proportion of non-empty intervals for sampling. (default=\code{0.1})
+#' @param filtering Filtering the re-sampled data or not. (default=\code{TRUE})
+#'
+#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
 #'
 #' @return
+#' \code{SearchingSampling} returns an object of class "SS", which is a list containing the following components:
 #' \item{ci}{1-alpha confidence interval for beta.}
-#' \item{check}{Indicator for whether the plurality rul is satisfied.}
 #' \item{SHat}{The set of relevant IVs.}
 #' \item{VHat}{The initial set of relevant and valid IVs.}
+#' \item{check}{Indicator for whether the plurality rule is satisfied.}
 
 #' @export
 #' @import intervals MASS CVXR glmnet
@@ -157,29 +160,22 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 #' @return
 #' @export
 summary.SS<- function(object,...){
-  return(object)
-}
-#' Summary of SS
-#'
-#' @param x SS object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.SS<- function(x,...){
-  SS <- x
+  SS <- object
   cat("\nInitial set of Valid Instruments:", SS$VHat, "\n");
-  cat("\nRelevant Instruments:", SS$SHat,"\n","\nThus, Majority rule",ifelse(SS$check,"holds.","does not hold."), "\n");
+  if (SS$check) {
+    cat("\nPlurality rule holds.\n")
+  } else {
+    cat("\nPlurality rule does not hold.\n")
+  }
   cat(rep("_", 30), "\n")
   if (nrow(SS$ci)==1) {
-    cat("\nConfidence Interval of BetaHat: [", SS$ci[1], ",", SS$ci[2], "]", "\n", sep = '');
+    cat("\nConfidence Interval for Beta: [", SS$ci[1], ",", SS$ci[2], "]", "\n", sep = '');
   } else {
-    cat("\nConfidence Interval of BetaHat:\n")
+    cat("\nConfidence Intervals for Beta:\n")
     for (i in 1:nrow(SS$ci)) {
       cat("[", SS$ci[i,1], ",", SS$ci[i,2], "]", "\n", sep = '')
     }
   }
-
 }
 
 
@@ -276,7 +272,7 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
 
   rule = TRUE
   if(dim(as.matrix(CI))[1] < prop*M){
-    warning("Sampling Criterion not met, trasfer to Searching Method.")
+    warning("Sampling Criterion not met, transfer to Searching Method.")
     CI.searching = Searching.CI(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet, beta.grid)
     rule = CI.searching$rule
     CI = CI.searching$CI

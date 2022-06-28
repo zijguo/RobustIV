@@ -8,19 +8,19 @@
 #' @param Z The instrument observation of dimension \eqn{n \times p_z}.
 #' @param X The covariates observation of dimension \eqn{n \times p_x}.
 #' @param intercept Whether the intercept is included. (default = \code{TRUE})
-#' @param alpha The significance level for the confidence interval. (default = 0.05)
-#' @param method The method used to estimate the reduced form parameters. "OLS" stands for ordinary least squares, "DeLasso" stands for the debiased Lasso estimator, and "Fast.DeLasso" stands for the debiased Lasso estimator with fast algorithm. (default = "Fast.DeLasso")
 #' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
-#' @param voting The voting option used to estimate valid IVs. 'MP' stnads for majority and plurality voting, 'MaxClique' stands for maximum clique in the IV voting matrix. (default = 'MaxClique')
+#' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})
+#' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})
+#' @param alpha The significance level for the confidence interval. (default = \code{0.05})
 #'
 #'
 #' @return
-#'     \code{endo.test} returns an object of class "endotest".
-#'     An object class "endotest" is a list containing the following components:
-#'    \item{\code{Q}}{Ttest statistic.}
-#'    \item{\code{Sigma12}}{Estimated covaraince.}
-#'    \item{\code{VHat}}{The estimated set of relevant and vaild IVs.}
-#'    \item{\code{alpha}}{The significance level.}
+#'     \code{endo.test} returns an object of class "endotest", which is a list containing the following components:
+#'    \item{\code{Q}}{Test statistic.}
+#'    \item{\code{Sigma12}}{Estimated covaraince of the regression errors.}
+#'    \item{\code{VHat}}{The set of vaild IVs.}
+#'    \item{\code{p.value}}{The p-value of the endogeneity test.}
+#'    \item{\code{check}}{Indicator for whether \eqn{H_0:\Sigma_{12}=0} is rejected or not.}
 #' @export
 #'
 #' @examples
@@ -34,7 +34,6 @@
 #' epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 #' D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
 #' Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
-#' TSHT(Y,D,Z,X, method = "DeLasso")
 #' endo.test.model <- endo.test(Y,D,Z,X)
 #' summary(endo.test.model)
 #' }
@@ -45,8 +44,8 @@
 #'
 #'
 #'
-endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso","DeLasso","OLS"),
-                      invalid=FALSE, voting = 'MaxClique'){
+endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLasso","DeLasso","OLS"),
+                       voting = c('MaxClique','MP'), alpha=0.05){
   # Check and Clean Input Type #
   # Check Y
   method = match.arg(method)
@@ -90,6 +89,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso"
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
   stopifnot(method=='OLS' | method=='DeLasso' | method =="Fast.DeLasso")
+  stopifnot(voting=='MaxClique' | method=='MP')
 
   # Derive Inputs for Endogeneity test
   n = length(Y); pz=ncol(Z)
@@ -104,7 +104,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso"
   }
 
   # Estimate Relevant IVs
-
+  voting = match.arg(voting)
   if (invalid) {
     SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
                          SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
@@ -132,7 +132,9 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso"
   if (!is.null(colnames(Z))) {
     VHat = colnames(Z)[Set]
   }
-  endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set,alpha = alpha)
+  p.value <- 1-pnorm(abs(Q))
+  check <- (abs(Q)>qnorm(1-alpha/2))
+  endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set,p.value = p.value,check = check,alpha = alpha)
   class(endo.test.model) <- "endotest"
   return(endo.test.model)
 
@@ -145,30 +147,19 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,alpha=0.05, method=c("Fast.DeLasso"
 #' @return
 #' @export
 summary.endotest<- function(object,...){
-  return(object)
-}
-#' Summary of endotest
-#'
-#' @param x endotest object
-#' @param ...
-#' @keywords internal
-#' @return
-#' @export
-print.endotest<- function(x,...){
-  endotest <- x
+  endotest <- object
   cat("\nValid Instruments:", endotest$VHat, "\n");
   cat(rep("_", 30), "\n")
   cat("Estimated covariance:",endotest$Sigma12,"\n");
   cat("Test statistics Q = ",endotest$Q,"\n")
-  cat("P-value = ",1-pnorm(abs(endotest$Q)),"\n")
-  if (abs(endotest$Q)>qnorm(1-endotest$alpha/2)) {
+  cat("P-value = ",endotest$p.value,"\n")
+  if (endotest$check) {
     cat("'H0 : Sigma12 = 0' is rejected at the significance level",endotest$alpha,".\n")
   } else {
     cat("'H0 : Sigma12 = 0' is not rejected at the significance level",endotest$alpha,".\n")
   }
 
 }
-
 endo.SHat <- function(ITT_Y,ITT_D,WUMat,SigmaSqY,SigmaSqD,SigmaYD) {
   # Check ITT_Y and ITT_D
   stopifnot(!missing(ITT_Y),!missing(ITT_D),length(ITT_Y) == length(ITT_D))
