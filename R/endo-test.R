@@ -103,18 +103,24 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   } else if(method == "DeLasso"){
     inputs = TSHT.SIHR(Y, D, W, pz, intercept=intercept)
   }
-
+  ITT_Y = inputs$ITT_Y;
+  ITT_D = inputs$ITT_D;
+  WUMat = inputs$WUMat;
+  SigmaSqD = inputs$SigmaSqD;
+  SigmaSqY = inputs$SigmaSqY;
+  SigmaYD=inputs$SigmaYD;
+  V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
+  V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
+  C = SigmaYD * t(WUMat)%*%WUMat / n
   # Estimate Relevant IVs
   voting = match.arg(voting)
   if (invalid) {
-    SetHats <- TSHT.VHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD, voting = voting)
+    SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting)
     Set = SetHats$VHat
   } else {
-    SetHats <- endo.SHat(ITT_Y = inputs$ITT_Y,ITT_D = inputs$ITT_D,WUMat = inputs$WUMat,
-                         SigmaSqD = inputs$SigmaSqD,SigmaSqY = inputs$SigmaSqY,
-                         SigmaYD=inputs$SigmaYD)
+    SetHats <- endo.SHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
+                         SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,
+                         SigmaYD=SigmaYD)
     Set = SetHats
   }
   WUMat = inputs$WUMat
