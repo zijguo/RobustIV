@@ -64,7 +64,7 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
   if(method=="OLS"){
 
     if(robust){
-      out = TSHT.OLS_hetero(Y, D, W, pz, intercept=intercept)
+      out = TSHT.OLS(Y, D, W, pz, intercept=intercept)
       ITT_Y = out$ITT_Y
       ITT_D = out$ITT_D
       V.Gamma = out$V.Gamma
