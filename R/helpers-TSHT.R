@@ -51,8 +51,8 @@ TSHT.SIHR <- function(Y, D, W, pz, intercept=TRUE){
 
   loading.mat = matrix(0, nrow=ncol(W), ncol=pz)
   for(i in 1:pz) loading.mat[i, i] = 1
-  out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
-  out2 = LF(W, D, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=FALSE)
+  out1 = LF(W, Y, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=TRUE)
+  out2 = LF(W, D, loading.mat, model="linear", intercept=intercept, intercept.loading=FALSE, verbose=TRUE)
   ITT_Y = out1$est.debias.vec
   ITT_D = out2$est.debias.vec
   U = out2$proj.mat
