@@ -12,17 +12,16 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
   ITT_D = Matrix::qr.coef(qrW, D)[1:pz]
   resid_Y = as.vector(Matrix::qr.resid(qrW, Y))
   resid_D = as.vector(Matrix::qr.resid(qrW, D))
-  V.Gamma = (t(WUMat)%*%diag(resid_Y^2)%*%WUMat)/n
-  V.gamma = (t(WUMat)%*%diag(resid_D^2)%*%WUMat)/n
-  C = (t(WUMat)%*%diag(resid_Y * resid_D)%*%WUMat)/n
   SigmaSqY = sum(Matrix::qr.resid(qrW,Y)^2)/(n -p)
   SigmaSqD = sum(Matrix::qr.resid(qrW,D)^2)/(n -p)
   SigmaYD = sum(Matrix::qr.resid(qrW,Y) * Matrix::qr.resid(qrW,D)) / (n - p)
+  ## V and C below are results for robust=TRUE
+  V.Gamma = (t(WUMat)%*%diag(resid_Y^2)%*%WUMat)/n
+  V.gamma = (t(WUMat)%*%diag(resid_D^2)%*%WUMat)/n
+  C = (t(WUMat)%*%diag(resid_Y * resid_D)%*%WUMat)/n
 
   return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,V.gamma = V.gamma, V.Gamma = V.Gamma, C = C, SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
 }
-
-
 
 TSHT.DeLasso <- function(Y,D,W,pz,intercept=TRUE) {
   n = nrow(W)
@@ -72,10 +71,15 @@ TSHT.SIHR <- function(Y, D, W, pz, intercept=TRUE){
 
 }
 
-TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'){
+TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique', method='OLS'){
   pz = nrow(V.Gamma)
+  if(method=="OLS"){
+    Tn = sqrt(log(n))
+  }else{
+    Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
+  }
   ## First Stage
-  Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
+  # Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
   SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
 
   if(length(SHat)==0){
@@ -102,7 +106,7 @@ TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'
                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
 
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
+    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn #sqrt(log(n))
     VHat.bool.j = PHat.bool.j * SHat.bool
     VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
   }

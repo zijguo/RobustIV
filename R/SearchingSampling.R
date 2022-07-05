@@ -18,6 +18,8 @@
 #' @param filtering Filtering the re-sampled data or not. (default=\code{TRUE})
 #'
 #' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
+#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, for other methods
+#' we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
 #'
 #' @return
 #' \code{SearchingSampling} returns an object of class "SS", which is a list containing the following components:
@@ -63,17 +65,14 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 
   if(method=="OLS"){
 
+    out = TSHT.OLS(Y, D, W, pz, intercept=intercept)
+    ITT_Y = out$ITT_Y
+    ITT_D = out$ITT_D
     if(robust){
-      out = TSHT.OLS(Y, D, W, pz, intercept=intercept)
-      ITT_Y = out$ITT_Y
-      ITT_D = out$ITT_D
       V.Gamma = out$V.Gamma
       V.gamma = out$V.gamma
       C = out$C
     }else{
-      out = TSHT.OLS(Y, D, W, pz, intercept=intercept)
-      ITT_Y = out$ITT_Y
-      ITT_D = out$ITT_D
       SigmaSqY = out$SigmaSqY
       SigmaSqD = out$SigmaSqD
       SigmaYD = out$SigmaYD
@@ -108,9 +107,10 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
     V.Gamma = SigmaSqY * t(WUMat)%*%WUMat / n
     V.gamma = SigmaSqD * t(WUMat)%*%WUMat / n
     C = SigmaYD * t(WUMat)%*%WUMat / n
+
   }
 
-  TSHT.out <- TSHT.Init(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C)
+  TSHT.out <- TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting="Conservative", method=method)
   V0.hat = sort(TSHT.out$VHat)
   if(length(V0.hat)==0) stop("No valid IVs selected.")
   ## Construct range [L, U]
@@ -285,63 +285,63 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
   return(list(CI=CI, rule=rule))
 }
 
-TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
-  pz = nrow(V.Gamma)
-  ## First Stage
-  Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)/2))
-  SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
-  if(length(SHat)==0){
-    warning("First Thresholding Warning: IVs individually weak.
-            TSHT with these IVs will give misleading CIs, SEs, and p-values.
-            Use more robust methods.")
-    warning("Defaulting to treating all IVs as strong.")
-    SHat= 1:pz
-  }
-  SHat.bool = rep(FALSE, pz); SHat.bool[SHat] = TRUE
-
-  ## Second Stage
-  nCand = length(SHat)
-  VHats.bool = matrix(FALSE, nCand, nCand)
-  colnames(VHats.bool) = rownames(VHats.bool) = SHat
-
-  for(j in SHat){
-    beta.j = ITT_Y[j]/ITT_D[j]
-    pi.j = ITT_Y - ITT_D * beta.j
-    Temp = V.Gamma + beta.j^2*V.gamma - 2*beta.j*C
-    SE.j = rep(NA, pz)
-    for(k in 1:pz){
-      SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] -
-                         2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
-    }
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
-    VHat.bool.j = PHat.bool.j * SHat.bool
-    VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
-  }
-  VHats.boot.sym<-VHats.bool
-  for(i in 1:dim(VHats.boot.sym)[1]){
-    for(j in 1:dim(VHats.boot.sym)[2]){
-      VHats.boot.sym[i,j]<-min(VHats.bool[i,j],VHats.bool[j,i])
-    }
-  }
-  diag(VHats.boot.sym) = 1
-
-  VM= apply(VHats.boot.sym,1,sum)
-  VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
-  VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
-
-  V.set<-NULL
-  for(index in union(VM.m,VM.p)){
-    V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
-  }
-  VHat<-NULL
-  for(index in V.set){
-    VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
-  }
-  VHat=sort(as.numeric(VHat))
-
-  out <- list(SHat=SHat, VHat=VHat, voting.mat=VHats.boot.sym)
-  return(out)
-}
+# TSHT.Init <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C){
+#   pz = nrow(V.Gamma)
+#   ## First Stage
+#   Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
+#   SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
+#   if(length(SHat)==0){
+#     warning("First Thresholding Warning: IVs individually weak.
+#             TSHT with these IVs will give misleading CIs, SEs, and p-values.
+#             Use more robust methods.")
+#     warning("Defaulting to treating all IVs as strong.")
+#     SHat= 1:pz
+#   }
+#   SHat.bool = rep(FALSE, pz); SHat.bool[SHat] = TRUE
+#
+#   ## Second Stage
+#   nCand = length(SHat)
+#   VHats.bool = matrix(FALSE, nCand, nCand)
+#   colnames(VHats.bool) = rownames(VHats.bool) = SHat
+#
+#   for(j in SHat){
+#     beta.j = ITT_Y[j]/ITT_D[j]
+#     pi.j = ITT_Y - ITT_D * beta.j
+#     Temp = V.Gamma + beta.j^2*V.gamma - 2*beta.j*C
+#     SE.j = rep(NA, pz)
+#     for(k in 1:pz){
+#       SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] -
+#                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
+#     }
+#     PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*sqrt(log(n))
+#     VHat.bool.j = PHat.bool.j * SHat.bool
+#     VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
+#   }
+#   VHats.boot.sym<-VHats.bool
+#   for(i in 1:dim(VHats.boot.sym)[1]){
+#     for(j in 1:dim(VHats.boot.sym)[2]){
+#       VHats.boot.sym[i,j]<-min(VHats.bool[i,j],VHats.bool[j,i])
+#     }
+#   }
+#   diag(VHats.boot.sym) = 1
+#
+#   VM= apply(VHats.boot.sym,1,sum)
+#   VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
+#   VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
+#
+#   V.set<-NULL
+#   for(index in union(VM.m,VM.p)){
+#     V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
+#   }
+#   VHat<-NULL
+#   for(index in V.set){
+#     VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
+#   }
+#   VHat=sort(as.numeric(VHat))
+#
+#   out <- list(SHat=SHat, VHat=VHat, voting.mat=VHats.boot.sym)
+#   return(out)
+# }
 
 
 

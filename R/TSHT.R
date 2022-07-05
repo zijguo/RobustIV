@@ -11,7 +11,11 @@
 #' @param robust If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
 #'
-#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat} is estimated from the union of maximum cliques, so the reliability of the estimate may be slightly reduced.
+#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
+#' When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat}
+#' is estimated from the union of maximum cliques, so the reliability of the estimate may be slightly reduced.
+#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, for other methods
+#' we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
 #
 #' @return
 #'
@@ -100,7 +104,6 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
   # Derive Inputs for TSHT
   n = length(Y); pz=ncol(Z)
 
-
   if(method == "OLS") {
     inputs = TSHT.OLS(Y,D,W,pz,intercept)
     A = t(inputs$WUMat) %*% inputs$WUMat / n
@@ -132,7 +135,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
     C = SigmaYD * t(WUMat)%*%WUMat / n
   }
   # Estimate Valid IVs
-  SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting)
+  SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method)
 
   VHat = SetHats$VHat; SHat = SetHats$SHat
   check = T
@@ -197,8 +200,6 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
   class(TSHTObject) <- 'TSHT'
 
   return(TSHTObject)
-
-
 }
 
 
