@@ -65,6 +65,8 @@ Construct Searching and Sampling confidence intervals for the causal effect, whi
 }
 \details{
 When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
+As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, for other methods
+we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
 }
 \examples{
 \dontrun{
