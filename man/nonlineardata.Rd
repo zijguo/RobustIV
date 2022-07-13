@@ -10,10 +10,10 @@ A data.frame with 3733 observations on 9 variables:
  \item \strong{Y:} The incidence of cardiovascular diseases.
  \item \strong{bmi:} The BMI level.
  \item \strong{insulin:} The insulin level.
- \item \strong{Z.1:} SNP genotypes (rs1121980).
- \item \strong{Z.2:} SNP genotypes (rs9939609).
- \item \strong{Z.3:} SNP genotypes (rs662799).
- \item \strong{Z.4:} SNP genotypes (rs8050136).
+ \item \strong{Z.1:} SNP genotypes.
+ \item \strong{Z.2:} SNP genotypes.
+ \item \strong{Z.3:} SNP genotypes.
+ \item \strong{Z.4:} SNP genotypes.
  \item \strong{age:} the age of the subject.
  \item \strong{sex:} the sex of the subject.
 }

@@ -46,6 +46,12 @@ endo.test(
 \description{
 Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
 }
+\details{
+When \code{voting = MaxClique} and there are multiple maximum cliques, we use union of maximum cliques as \code{VHat} and calculate \code{Q} and \code{Sigma12}
+by this \code{VHat}.
+As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
+we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
+}
 \examples{
 \dontrun{
 n = 500; L = 600; s = 3; k = 10; px = 10;

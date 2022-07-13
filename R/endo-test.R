@@ -13,6 +13,11 @@
 #' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
 #'
+#' @details
+#' When \code{voting = MaxClique} and there are multiple maximum cliques, we use union of maximum cliques as \code{VHat} and calculate \code{Q} and \code{Sigma12}
+#' by this \code{VHat}.
+#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
+#' we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
 #'
 #' @return
 #'     \code{endo.test} returns an object of class "endotest", which is a list containing the following components:
@@ -115,8 +120,8 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   # Estimate Relevant IVs
   voting = match.arg(voting)
   if (invalid) {
-    SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting)
-    Set = SetHats$VHat
+    SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method)
+    Set = sort(unique(unlist(SetHats$VHat)))
   } else {
     SetHats <- endo.SHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
                          SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,
@@ -139,7 +144,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   if (!is.null(colnames(Z))) {
     VHat = colnames(Z)[Set]
   }
-  p.value <- 1-pnorm(abs(Q))
+  p.value <- 2*(1-pnorm(abs(Q)))
   check <- (abs(Q)>qnorm(1-alpha/2))
   endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set,p.value = p.value,check = check,alpha = alpha)
   class(endo.test.model) <- "endotest"

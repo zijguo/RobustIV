@@ -1,14 +1,14 @@
 #' @title Control-Function
 #' @description Implement the control function method for estimation and inference of nonlinear treatment effects.
 #' @param formula A formula describing the model to be fitted.
-#' @param d1 The transformation of baseline treatment value.
-#' @param d2 The transformation of target treatment value.
+#' @param d1 The baseline treatment value.
+#' @param d2 The target treatment value.
 #'
 #' @return
 #'    \code{cf} returns an object of class "cf", which is a list containing the following components:
 #'    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
-#'    \item{\code{CausalEffect}}{The causal effect of increasing the treatment from \code{d1} to \code{d2}.}
+#'    \item{\code{CausalEffect}}{The causal effect when the treatment was changed from \code{d1} to \code{d2}.}
 #'
 #' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
 #' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
@@ -16,7 +16,7 @@
 #' \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2 + X\psi + v}.
 #' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
 #' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-#' If one of \code{d1} or \code{d2} is \code{NULL}, \code{CausalEffect} returns \code{NULL}.
+#' If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is increased by one.
 #' @export
 #'
 #'
@@ -28,8 +28,7 @@
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 #' X <- as.matrix(mroz[,c("exper","expersq","age")])
-#' cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D),median(D)^2),
-#' d2 =c(median(D)+1,(median(D)+1)^2) )
+#' cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 #' summary(cf.model)
 #' }
 #' @references {
@@ -86,84 +85,127 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
   # Parse X and Z into D, X, and Z
 
   whichD = !(colnames(X) %in% colnames(Z))
-  D = X[,whichD,drop=FALSE]
-  if (sum(!whichD) == 0) {
+  d = X[,whichD,drop=FALSE]
+  if (sum(!whichD) == 0) { # no covariates case
     if (intercept) {
-      first.model <- lm(D~Z)
-      e1 <- first.model$residuals[,1]
-      second.model <- lm(Y~D+e1)
+      first.model <- lm(d~Z)
+      e1 <- first.model$residuals[,1] # so the first term of d should be "D"
+      second.model <- lm(Y~d+e1)
       cf.coef <- second.model$coefficients
       cf.coef <- cf.coef[-which(names(cf.coef)=="e1")]
-      names(cf.coef)[2:length(cf.coef)] = colnames(D)
+      names(cf.coef)[2:length(cf.coef)] = colnames(d)
       cf.vcov <- vcov(second.model)
       cf.vcov <- cf.vcov[-which(rownames(cf.vcov)=="e1"),-which(colnames(cf.vcov)=="e1")]
-      rownames(cf.vcov)[2:length(cf.coef)] = colnames(cf.vcov)[2:length(cf.coef)] = colnames(D)
+      rownames(cf.vcov)[2:length(cf.coef)] = colnames(cf.vcov)[2:length(cf.coef)] = colnames(d)
+
       if (!is.null(d1)&!is.null(d2)) {
-        stopifnot(ncol(D)==length(d1))
-        stopifnot(ncol(D)==length(d2))
-        CausalEffect <- (d2-d1)%*%cf.coef[-1]
+        assign(colnames(d)[1],d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        assign(colnames(d)[1],d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[-1]
       } else {
-        CausalEffect = NULL
+        # cat("There is no baseline or target treatment value.\n")
+        # cat("Calculate the causal effect of increasing of 1 in the median of treatment.\n")
+        d1 <- median(d[,1])
+        assign(colnames(d)[1],d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        d2 <- d1+1
+        assign(colnames(d)[1],d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[-1]
       }
 
     } else {
-      first.model <- lm(D~0+Z)
+      first.model <- lm(d~0+Z)
       e1 <- first.model$residuals[,1]
-      second.model <- lm(Y~0+D+e1)
+      second.model <- lm(Y~0+d+e1)
       cf.coef <- second.model$coefficients
       cf.coef <- cf.coef[-which(names(cf.coef)=="e1")]
-      names(cf.coef) = colnames(D)
+      names(cf.coef) = colnames(d)
       cf.vcov <- vcov(second.model)
       cf.vcov <- cf.vcov[-which(rownames(cf.vcov)=="e1"),-which(colnames(cf.vcov)=="e1")]
-      rownames(cf.vcov) = colnames(cf.vcov) = colnames(D)
+      rownames(cf.vcov) = colnames(cf.vcov) = colnames(d)
       if (!is.null(d1)&!is.null(d2)) {
-      stopifnot(ncol(D)==length(d1))
-      stopifnot(ncol(D)==length(d2))
-      CausalEffect <- (d2-d1)%*%cf.coef
+        assign(colnames(d)[1],d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        assign(colnames(d)[1],d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef
       } else {
-        CausalEffect = NULL
+        # cat("There is no baseline or target treatment value.\n")
+        # cat("Calculate the causal effect of increasing of 1 in the median of treatment.\n")
+        d1 <- median(d[,1])
+        assign(colnames(d)[1],d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        d2 <- d1+1
+        assign(colnames(d)[1],d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef
       }
     }
 
 
-  } else {
+  } else { # when there is covariates
     X = X[,!whichD,drop=FALSE]
     whichZ = !(colnames(Z) %in% colnames(X))
     Z = Z[,whichZ,drop=FALSE]
     if (intercept) {
-      first.model <- lm(D~Z+X)
-      e1 <- first.model$residuals[,1]
-      second.model <- lm(Y~D+X+e1)
+      first.model <- lm(d~Z+X)
+      e1 <- first.model$residuals[,1] # so the first term of d should be "D"
+      second.model <- lm(Y~d+X+e1)
       cf.coef <- second.model$coefficients
       cf.coef <- cf.coef[-which(names(cf.coef)=="e1")]
-      names(cf.coef)[2:length(cf.coef)] = c(colnames(D),colnames(X))
+      names(cf.coef)[2:length(cf.coef)] = c(colnames(d),colnames(X))
       cf.vcov <- vcov(second.model)
       cf.vcov <- cf.vcov[-which(rownames(cf.vcov)=="e1"),-which(colnames(cf.vcov)=="e1")]
-      rownames(cf.vcov)[2:length(cf.coef)] = colnames(cf.vcov)[2:length(cf.coef)] = c(colnames(D),colnames(X))
+      rownames(cf.vcov)[2:length(cf.coef)] = colnames(cf.vcov)[2:length(cf.coef)] = c(colnames(d),colnames(X))
+      d.name <- colnames(d)[1]
       if (!is.null(d1)&!is.null(d2)) {
-        stopifnot(ncol(D)==length(d1))
-        stopifnot(ncol(D)==length(d2))
-        CausalEffect <- (d2-d1)%*%cf.coef[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))]
+        assign(d.name,d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        assign(d.name,d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))]
       } else{
-        CausalEffect <- NULL
+        # cat("There is no baseline or target treatment value.\n")
+        # cat("Calculate the causal effect of increasing of 1 in the median of treatment.\n")
+        d1 <- median(d[,1])
+        assign(d.name,d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        d2 <- d1+1
+        assign(d.name,d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))]
       }
 
     } else {
-      first.model <- lm(D~0+Z+X)
+      first.model <- lm(d~0+Z+X)
       e1 <- first.model$residuals[,1]
-      second.model <- lm(Y~0+D+X+e1)
+      second.model <- lm(Y~0+d+X+e1)
       cf.coef <- second.model$coefficients
       cf.coef <- cf.coef[-which(names(cf.coef)=="e1")]
-      names(cf.coef) = c(colnames(D),colnames(X))
+      names(cf.coef) = c(colnames(d),colnames(X))
       cf.vcov <- vcov(second.model)
       cf.vcov <- cf.vcov[-which(rownames(cf.vcov)=="e1"),-which(colnames(cf.vcov)=="e1")]
-      rownames(cf.vcov) = colnames(cf.vcov) = c(colnames(D),colnames(X))
+      rownames(cf.vcov) = colnames(cf.vcov) = c(colnames(d),colnames(X))
+      d.name <- colnames(d)[1]
       if (!is.null(d1)&!is.null(d2)) {
-        stopifnot(ncol(D)==length(d1))
-        stopifnot(ncol(D)==length(d2))
-        CausalEffect <- (d2-d1)%*%cf.coef[(1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))]]
+        assign(d.name,d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        assign(d.name,d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[(1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))]]
       } else{
-        CausalEffect <- NULL
+        # cat("There is no baseline or target treatment value.\n")
+        # cat("Calculate the causal effect of increasing of 1 in the median of treatment.\n")
+        d1 <- median(d[,1])
+        assign(d.name,d1)
+        d.base <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        d2 <- d1+1
+        assign(d.name,d2)
+        d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
+        CausalEffect <- (d.target-d.base)%*%cf.coef[(1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))]]
       }
 
     }
@@ -193,7 +235,7 @@ summary.cf<- function(object,...){
   colnames(cmat) <- c("Estimate", "Std.Err", "t value", "Pr(>|t|)")
   printCoefmat(cmat, digits = max(3L, getOption("digits") - 3L))
   if (!is.null(cf$d2)&!is.null(cf$d1)) {
-    cat("Causal effect from D =",cf$d1[1],"to",cf$d2[1],": ",cf$CausalEffect,"\n" )
+    cat("The causal effect when changing treatment from",cf$d1,"to",cf$d2,": ",cf$CausalEffect,"\n" )
   }
 }
 

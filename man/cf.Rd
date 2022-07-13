@@ -9,15 +9,15 @@ cf(formula, d1 = NULL, d2 = NULL)
 \arguments{
 \item{formula}{A formula describing the model to be fitted.}
 
-\item{d1}{The transformation of baseline treatment value.}
+\item{d1}{The baseline treatment value.}
 
-\item{d2}{The transformation of target treatment value.}
+\item{d2}{The target treatment value.}
 }
 \value{
 \code{cf} returns an object of class "cf", which is a list containing the following components:
    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
-   \item{\code{CausalEffect}}{The causal effect of increasing the treatment from \code{d1} to \code{d2}.}
+   \item{\code{CausalEffect}}{The causal effect when the treatment was changed from \code{d1} to \code{d2}.}
 }
 \description{
 Implement the control function method for estimation and inference of nonlinear treatment effects.
@@ -29,7 +29,7 @@ and
 \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2 + X\psi + v}.
 Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
 the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-If one of \code{d1} or \code{d2} is \code{NULL}, \code{CausalEffect} returns \code{NULL}.
+If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is increased by one.
 }
 \examples{
 \dontrun{
@@ -37,8 +37,7 @@ Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 X <- as.matrix(mroz[,c("exper","expersq","age")])
-cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D),median(D)^2),
-d2 =c(median(D)+1,(median(D)+1)^2) )
+cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 summary(cf.model)
 }
 }

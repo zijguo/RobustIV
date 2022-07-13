@@ -71,99 +71,8 @@ TSHT.SIHR <- function(Y, D, W, pz, intercept=TRUE){
 
 }
 
+
 TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique', method='OLS'){
-  pz = nrow(V.Gamma)
-  if(method=="OLS"){
-    Tn = sqrt(log(n))
-  }else{
-    Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
-  }
-  ## First Stage
-  # Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
-  SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
-
-  if(length(SHat)==0){
-    warning("First Thresholding Warning: IVs individually weak.
-            TSHT with these IVs will give misleading CIs, SEs, and p-values.
-            Use more robust methods.")
-    warning("Defaulting to treating all IVs as strong.")
-    SHat= 1:pz
-  }
-  SHat.bool = rep(FALSE, pz); SHat.bool[SHat] = TRUE
-
-  ## Second Stage
-  nCand = length(SHat)
-  VHats.bool = matrix(FALSE, nCand, nCand)
-  colnames(VHats.bool) = rownames(VHats.bool) = SHat
-
-  for(j in SHat){
-    beta.j = ITT_Y[j]/ITT_D[j]
-    pi.j = ITT_Y - ITT_D * beta.j
-    Temp = V.Gamma + beta.j^2*V.gamma - 2*beta.j*C
-    SE.j = rep(NA, pz)
-    for(k in 1:pz){
-      SE.j[k] = 1/n * (Temp[k,k] + (ITT_D[k]/ITT_D[j])^2*Temp[j,j] -
-                         2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
-    }
-
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn #sqrt(log(n))
-    VHat.bool.j = PHat.bool.j * SHat.bool
-    VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
-  }
-  VHats.boot.sym<-VHats.bool
-  for(i in 1:dim(VHats.boot.sym)[1]){
-    for(j in 1:dim(VHats.boot.sym)[2]){
-      VHats.boot.sym[i,j]<-min(VHats.bool[i,j],VHats.bool[j,i])
-    }
-  }
-  diag(VHats.boot.sym) = 1
-
-  VM= apply(VHats.boot.sym,1,sum)
-  VM.m = rownames(VHats.boot.sym)[VM > (0.5 * length(SHat))] # Majority winners
-  VM.p = rownames(VHats.boot.sym)[max(VM) == VM] #Plurality winners
-  VHat = as.numeric(union(VM.m, VM.p))
-
-  # Error check
-  if(length(VHat) == 0){
-    warning("VHat Warning: No valid IVs estimated. This may be due to weak IVs or identification condition not being met. Use more robust methods.")
-    warning("Defaulting to all IVs being valid")
-    VHat = 1:pz
-  }
-  if (voting == 'MaxClique') {
-    voting.graph <- igraph::as.undirected(igraph::graph_from_adjacency_matrix(VHats.boot.sym))
-    max.clique <- igraph::largest.cliques(voting.graph)
-    VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
-    VHat <- sort(as.numeric(VHat))
-  } else if (voting == 'MP') {
-    VHat <- sort(as.numeric(union(VM.m,VM.p))) # Union of majority and plurality winners
-  } else if (voting == 'Conservative'){
-    V.set<-NULL
-    for(index in VM.p){
-      V.set<-union(V.set,names(which(VHats.boot.sym[index,]==1)))
-    }
-    VHat<-NULL
-    for(index in V.set){
-      VHat<-union(VHat,names(which(VHats.boot.sym[,index]==1)))
-    }
-    VHat=sort(as.numeric(VHat))
-  }
-
-  # Error check
-  if(length(VHat) == 0){
-    warning("VHat Warning: No valid IVs estimated. This may be due to weak IVs or identification condition not being met. Use more robust methods.")
-    warning("Defaulting to all IVs being valid")
-    VHat = 1:pz
-  }
-
-  if (voting == 'MaxClique') {
-    returnList <- list(SHat=SHat,VHat=VHat,max.clique=max.clique,voting.mat=VHats.boot.sym)
-  } else {
-    returnList <- list(SHat=SHat,VHat=VHat,voting.mat=VHats.boot.sym)
-  }
-  return(returnList)
-}
-
-TSHT.VHat_V2 <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique', method='OLS'){
   pz = nrow(V.Gamma)
   if(method=="OLS"){
     Tn = sqrt(log(n))
@@ -265,23 +174,35 @@ TSHT.VHat_V2 <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxCliq
 #' @return
 #' @export
 summary.TSHT <- function(object,...){
-  TSHT <- object
-  cat("\nRelevant Instruments:", TSHT$SHat, "\n");
-  cat("\nValid Instruments:", TSHT$VHat,"\n");
-  cat(rep("_", 30), "\n")
-  cat("\nBetaHat:",TSHT$betaHat,"\n");
-  cat("\nStandard error of BetaHat:",TSHT$beta.sdHat,"\n");
-  cat("\nConfidence interval for Beta: [", TSHT$ci[1], ",", TSHT$ci[2], "]", "\n", sep = '');
-  if (!is.null(TSHT$beta.clique)&&!(nrow(TSHT$max.clique)==1)) {
-    cat(rep("_", 30), "\n")
-    cat("\nResults from each maximum clique\n")
-    for (i in 1:nrow(TSHT$max.clique)) {
-      cat("\nMaximum clique", i,":", TSHT$max.clique[i,], "\n");
-      cat("\nBetaHat from the clique:",TSHT$beta.clique[i,],"\n");
-      cat("\nStandard error of BetaHat from the clique:",TSHT$beta.sd.clique[i,],"\n");
-      cat("\nConfidence interval for Beta from the clique: [", TSHT$CI.clique[i,1], ",", TSHT$CI.clique[i, 2], "]", "\n", sep = '');
-      cat(rep("_", 30), "\n")
+  TSHT1 <- object
+  if (typeof(TSHT1$VHat)=="list") {
+    result<-matrix(NA, ncol=5, nrow=length(TSHT1$VHat))
+    result <- data.frame(result)
+    colnames(result)<-c("betaHat","Std.Error",paste("CI(",round(TSHT1$alpha/2*100, digits=2), "%)", sep=""),
+                        paste("CI(",round((1-TSHT1$alpha/2)*100, digits=2), "%)", sep=""),"Valid IVs")
+    rownames(result)<-paste0("MaxClique",1:length(TSHT1$VHat))
+    result[,1] <- unlist(TSHT1$betaHat)
+    result[,2] <- unlist(TSHT1$beta.sdHat)
+    result[,3:4] <- matrix(unlist(TSHT1$ci),nrow = length(TSHT1$VHat),ncol = 2,byrow = T)
+    for (i in 1:length(TSHT1$VHat)) {
+      result[i,5] <- paste(TSHT1$VHat[[i]], collapse = " ")
     }
+    cat("\nRelevant IVs:", TSHT1$SHat, "\n");
+    cat(rep("_", 30), "\n")
+    print(result,right=F)
+  } else {
+    cat("\nRelevant IVs:", TSHT1$SHat, "\n");
+    cat(rep("_", 30), "\n")
+    result<-matrix(NA, ncol=5, nrow=1)
+    result <- data.frame(result)
+    colnames(result)<-c("betaHat","Std.Error",paste("CI(",round(TSHT1$alpha/2*100, digits=2), "%)", sep=""),
+                        paste("CI(",round((1-TSHT1$alpha/2)*100, digits=2), "%)", sep=""),"Valid IVs")
+    rownames(result)<-""
+    result[,1] <- TSHT1$betaHat
+    result[,2] <- TSHT1$beta.sdHat
+    result[,3:4] <- TSHT1$ci
+    result[,5] <- paste(TSHT1$VHat,collapse = " ")
+    print(result,right=F)
   }
 }
 

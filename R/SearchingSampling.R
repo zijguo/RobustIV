@@ -18,7 +18,7 @@
 #' @param filtering Filtering the re-sampled data or not. (default=\code{TRUE})
 #'
 #' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
-#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, for other methods
+#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
 #' we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
 #'
 #' @return
@@ -342,7 +342,6 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
 #   out <- list(SHat=SHat, VHat=VHat, voting.mat=VHats.boot.sym)
 #   return(out)
 # }
-
 
 
 

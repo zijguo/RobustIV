@@ -44,35 +44,14 @@ TSHT(
     \item{\code{VHat}}{The set of relevant and valid IVs.}
     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
     \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
-    \item{\code{beta.clique}}{The estimates of treatment effect from each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}.}
-    \item{\code{beta.sd.clique}}{The estimated standard deviation of \code{betaHat} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-    \item{\code{CI.clique}}{The 1-alpha confidence interval for \code{beta} of each maximum clique. Only returns when \code{voting} is \code{'MaxClique'}}
-    \item{\code{max.clique}}{The maximum cliques voted as valid IVs. Only returns when \code{voting} is \code{'MaxClique'}}
 }
 \description{
 Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
 }
 \details{
 When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
-When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat}
-is estimated from the union of maximum cliques, so the reliability of the estimate may be slightly reduced.
-As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, for other methods
+When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat},\code{beta.sdHat},\code{ci}, and \code{VHat} will be list objects
+where each element of list corresponds to each maximum clique.
+As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
 we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
-
-When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
-}
-\examples{
-\dontrun{
-Y <- mroz[,"lwage"]
-D <- mroz[,"educ"]
-Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-X <- mroz[,"age"]
-TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
-summary(TSHT.model)
-}
-}
-\references{
-{
-Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
-}
 }

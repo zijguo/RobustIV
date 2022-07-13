@@ -9,6 +9,9 @@
 \arguments{
 \item{object}{pretest object}
 }
+\value{
+
+}
 \description{
 Summary of pretest
 }
