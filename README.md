@@ -7,6 +7,10 @@ The package can be installed from Github using the following code:
 ```R
 devtools::install_github("https://github.com/zijguo/RobustIV")
 ```
+Before using the package, we can use the following code:
+```R
+library(RobustIV)
+```
 
 # Low-dimensional Examples
 
