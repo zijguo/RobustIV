@@ -23,16 +23,10 @@ We use Mroz (1987) data to estimate the effect of education on log earnings. Her
 > TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 > summary(TSHT.model)
 
-Relevant Instruments: motheduc fatheduc huseduc 
-
-Valid Instruments: motheduc fatheduc huseduc 
+Relevant IVs: motheduc fatheduc huseduc 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-BetaHat: 0.08029083 
-
-Standard error of BetaHat: 0.02186046 
-
-Confidence interval for Beta: [0.03744511,0.1231365]
+ betaHat    Std.Error  CI(2.5%)   CI(97.5%) Valid IVs                
+ 0.08029083 0.02186046 0.03744511 0.1231365 motheduc fatheduc huseduc
 
 ```
 ### Reference
@@ -54,16 +48,15 @@ Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 Confidence Interval for Beta: [-0.2850882,0.2687119]
-
-> SS.model <- SearchingSampling(Y,D,Z,X)
-> summary(SS.model)
+> Sampling.model <- SearchingSampling(Y,D,Z,X)
+> summary(Sampling.model)
 
 Initial set of Valid Instruments: motheduc fatheduc huseduc 
 
 Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval for Beta: [-0.153231,0.1632262]
+Confidence Interval for Beta: [-0.1268596,0.2423405]
 ```
 ### Reference
 Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
@@ -76,7 +69,7 @@ We use the control function method in additive model with continuous outcome and
 > D <- mroz[,"educ"]
 > Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 > X <- as.matrix(mroz[,c("exper","expersq","age")])
-> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X,d1 = c(median(D),median(D)^2),d2 = c(median(D)+1,(median(D)+1)^2))
+> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 > summary(cf.model)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
@@ -91,7 +84,7 @@ Xexpersq    -0.0008713  0.0003984   2.187 0.014631 *
 Xage        -0.0011636  0.0048634   0.239 0.405511    
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-Causal effect from D = 12 to 13 :  0.07262563 
+The causal effect when changing treatment from 12 to 13 :  0.07262563 
 
 > pretest.model <- pretest(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 > summary(pretest.model)
@@ -136,6 +129,7 @@ causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), T
 > w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 > SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5], invalid = TRUE)
 > summary(SpotIV.model)
+
 Relevant Instruments: motheduc fatheduc huseduc 
 
 Valid Instruments: motheduc fatheduc huseduc 
@@ -147,14 +141,14 @@ BetaHat: 0.8791451
 
 CATEHat: 0.1298192 
 
-Standard error of CATEHat: 0.4244563 
+Standard error of CATEHat: 0.3007202 
 
-95% Confidence Interval for CATE: [-0.7020999,0.9617384]
+95% Confidence Interval for CATE: [-0.4595816,0.71922]
 ```
 
 ```R
 > Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0,invalid = T)
-> summary(Probit.model)
+>  ummary(Probit.model)
 
 Relevant Instruments: motheduc fatheduc huseduc 
 
@@ -165,15 +159,15 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 BetaHat: 0.2118909 
 
-Standard error of BetaHat: 0.09269852 
+Standard error of BetaHat: 0.0671424 
 
-95% Confidence Interval for Beta: [0.0302051,0.3935766]
+95% Confidence Interval for Beta: [0.08029418,0.3434876]
 
 CATEHat: 0.08435024 
 
-Standard error of CATEHat: 0.03646787 
+Standard error of CATEHat: 0.02592536 
 
-95% Confidence Interval for CATE: [0.01287454,0.1558259]
+95% Confidence Interval for CATE: [0.03353747,0.135163]
 ```
 
 ### Reference
@@ -202,16 +196,10 @@ D = Z\gamma + X\psi + v
 > TSHT.model <- TSHT(Y,D,Z,X,method = "Fast.DeLasso")
 > summary(TSHT.model)
 
-Relevant Instruments: 1 2 3 4 5 6 7 8 9 10 
-
-Valid Instruments: 4 5 6 7 8 9 10 
+Relevant IVs: 1 2 3 4 5 6 7 8 9 10 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-BetaHat: 0.9893991 
-
-Standard error of BetaHat: 0.01587193 
-
-Confidence interval for Beta: [0.9582907,1.020508]
+ betaHat   Std.Error CI(2.5%)  CI(97.5%) Valid IVs     
+ 0.9880546 0.0157771 0.9571321 1.018977  4 5 6 7 8 9 10
 
 ```
 
