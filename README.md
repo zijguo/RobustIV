@@ -152,7 +152,7 @@ Standard error of CATEHat: 0.3007202
 
 ```R
 > Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0,invalid = T)
->  ummary(Probit.model)
+> summary(Probit.model)
 
 Relevant Instruments: motheduc fatheduc huseduc 
 
