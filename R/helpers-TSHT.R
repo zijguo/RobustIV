@@ -19,9 +19,9 @@ TSHT.OLS <- function(Y,D,W,pz,intercept=TRUE) {
   # V.Gamma = (t(WUMat)%*%diag(resid_Y^2)%*%WUMat)/n
   # V.gamma = (t(WUMat)%*%diag(resid_D^2)%*%WUMat)/n
   # C = (t(WUMat)%*%diag(resid_Y * resid_D)%*%WUMat)/n
-  V.Gamma = crossprod(resid_Y*WUMat)
-  V.gamma = crossprod(resid_D*WUMat)
-  C = crossprod(resid_Y*WUMat, resid_D*WUMat)
+  V.Gamma = crossprod(resid_Y*WUMat)/n
+  V.gamma = crossprod(resid_D*WUMat)/n
+  C = crossprod(resid_Y*WUMat, resid_D*WUMat)/n
 
   return(list(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,V.gamma = V.gamma, V.Gamma = V.Gamma, C = C, SigmaSqY = SigmaSqY,SigmaSqD = SigmaSqD,SigmaYD = SigmaYD))
 }
