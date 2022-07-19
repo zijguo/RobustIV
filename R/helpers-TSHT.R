@@ -75,16 +75,18 @@ TSHT.SIHR <- function(Y, D, W, pz, intercept=TRUE){
 }
 
 
-TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique', method='OLS'){
+TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique',
+                      method='OLS', tuning.1st=NULL, tuning.2nd=NULL){
   pz = nrow(V.Gamma)
   if(method=="OLS"){
-    Tn = sqrt(log(n))
+    Tn1 = Tn2 = sqrt(log(n))
   }else{
-    Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
+    Tn1 = Tn2 = max(sqrt(2.01*log(pz)), sqrt(log(n)))
   }
+  if(!is.null(tuning.1st)) Tn1 = tuning.1st
+  if(!is.null(tuning.2nd)) Tn2 = tuning.1st
   ## First Stage
-  # Tn = max(sqrt(2.01*log(pz)), sqrt(log(n)))
-  SHat = (1:pz)[abs(ITT_D) > (Tn * sqrt(diag(V.gamma)/n))]
+  SHat = (1:pz)[abs(ITT_D) > (Tn1 * sqrt(diag(V.gamma)/n))]
 
   if(length(SHat)==0){
     warning("First Thresholding Warning: IVs individually weak.
@@ -110,7 +112,7 @@ TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'
                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
 
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn #sqrt(log(n))
+    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn2 #sqrt(log(n))
     VHat.bool.j = PHat.bool.j * SHat.bool
     VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
   }

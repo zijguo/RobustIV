@@ -12,6 +12,8 @@
 #' @param voting The voting option used to estimate valid IVs. \code{'MP'} stands for majority and plurality voting, \code{'MaxClique'} stands for finding maximal clique in the IV voting matrix, and \code{'Conservative'} stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= \code{'MaxClique'}).
 #' @param robust If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
+#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently. (default=\code{NULL})
+#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently. (default=\code{NULL})
 #'
 #' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
 #' When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat},\code{beta.sdHat},\code{ci}, and \code{VHat} will be list objects
@@ -29,7 +31,8 @@
 #'     \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
 #' @export
 TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"),
-                    voting = c('MaxClique','MP','Conservative'), robust = FALSE, alpha=0.05) {
+                 voting = c('MaxClique','MP','Conservative'), robust = FALSE, alpha=0.05,
+                 tuning.1st=NULL, tuning.2nd=NULL) {
   stopifnot(is.logical(robust))
   method = match.arg(method)
   if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
@@ -75,6 +78,9 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
     W = Z
   }
 
+  # centralize W
+  W = scale(W, center = T, scale = F)
+
   # All the other argument
   stopifnot(is.logical(intercept))
   stopifnot(is.numeric(alpha),length(alpha) == 1,alpha <= 1,alpha >= 0)
@@ -115,7 +121,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
     C = SigmaYD * t(WUMat)%*%WUMat / n
   }
   # Estimate Valid IVs
-  SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method)
+  SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method, tuning.1st=tuning.1st, tuning.2nd=tuning.2nd)
 
   VHat = SetHats$VHat; SHat = SetHats$SHat
   check = T

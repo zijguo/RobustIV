@@ -16,6 +16,8 @@
 #' @param M Re-sampling size. (default = \code{1000})
 #' @param prop Proportion of non-empty intervals for sampling. (default=\code{0.1})
 #' @param filtering Filtering the re-sampled data or not. (default=\code{TRUE})
+#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently. (default=\code{NULL})
+#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently. (default=\code{NULL})
 #'
 #' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
 #' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
@@ -49,7 +51,8 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
                               method=c("OLS","DeLasso","Fast.DeLasso"),
                               robust=FALSE, Sampling=TRUE, alpha=0.05,
                               CI.init = NULL, a=0.6,
-                              rho=NULL, M=1000, prop=0.1, filtering=TRUE){
+                              rho=NULL, M=1000, prop=0.1, filtering=TRUE,
+                              tuning.1st=NULL, tuning.2nd=NULL){
   method = match.arg(method)
   if(method %in% c("DeLasso", "Fast.DeLasso") && robust==TRUE){
     robust = FALSE
@@ -110,7 +113,8 @@ SearchingSampling <- function(Y, D, Z, X=NULL, intercept=TRUE,
 
   }
 
-  TSHT.out <- TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting="Conservative", method=method)
+  TSHT.out <- TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting="Conservative", method=method,
+                        tuning.1st=tuning.1st, tuning.2nd=tuning.2nd)
   V0.hat = sort(TSHT.out$VHat)
   if(length(V0.hat)==0) stop("No valid IVs selected.")
   ## Construct range [L, U]
