@@ -13,7 +13,9 @@ TSHT(
   method = c("OLS", "DeLasso", "Fast.DeLasso"),
   voting = c("MaxClique", "MP", "Conservative"),
   robust = FALSE,
-  alpha = 0.05
+  alpha = 0.05,
+  tuning.1st = NULL,
+  tuning.2nd = NULL
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ TSHT(
 \item{robust}{If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})}
 
 \item{alpha}{The significance level for the confidence interval. (default = \code{0.05})}
+
+\item{tuning.1st}{tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
+
+\item{tuning.2nd}{tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
 }
 \value{
 \code{TSHT} returns an object of class "TSHT", which is a list containing the following components:
@@ -52,6 +58,6 @@ Perform Two-Stage Hard Thresholding method, which provides the robust inference 
 When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
 When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat},\code{beta.sdHat},\code{ci}, and \code{VHat} will be list objects
 where each element of list corresponds to each maximum clique.
-As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
-we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
+As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
+we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
 }

@@ -19,7 +19,9 @@ SearchingSampling(
   rho = NULL,
   M = 1000,
   prop = 0.1,
-  filtering = TRUE
+  filtering = TRUE,
+  tuning.1st = NULL,
+  tuning.2nd = NULL
 )
 }
 \arguments{
@@ -52,6 +54,10 @@ SearchingSampling(
 \item{prop}{Proportion of non-empty intervals for sampling. (default=\code{0.1})}
 
 \item{filtering}{Filtering the re-sampled data or not. (default=\code{TRUE})}
+
+\item{tuning.1st}{tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
+
+\item{tuning.2nd}{tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
 }
 \value{
 \code{SearchingSampling} returns an object of class "SS", which is a list containing the following components:
@@ -65,8 +71,8 @@ Construct Searching and Sampling confidence intervals for the causal effect, whi
 }
 \details{
 When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
-As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
-we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
+As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
+we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
 }
 \examples{
 \dontrun{
