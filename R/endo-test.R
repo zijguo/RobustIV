@@ -1,7 +1,7 @@
 
 
 #' @title Endogeneity test in high dimensions
-#' @description Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
+#' @description Conduct the endogeneity test with high dimensional and possibly invalid instrumental variables.
 #'
 #' @param Y The outcome observation, a vector of length \eqn{n}.
 #' @param D The treatment observation, a vector of length \eqn{n}.
@@ -12,12 +12,14 @@
 #' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})
 #' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
+#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
 #'
 #' @details
 #' When \code{voting = MaxClique} and there are multiple maximum cliques, we use union of maximum cliques as \code{VHat} and calculate \code{Q} and \code{Sigma12}
 #' by this \code{VHat}.
-#' As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
-#' we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
+#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
+#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
 #'
 #' @return
 #'     \code{endo.test} returns an object of class "endotest", which is a list containing the following components:
@@ -25,12 +27,11 @@
 #'    \item{\code{Sigma12}}{Estimated covaraince of the regression errors.}
 #'    \item{\code{VHat}}{The set of vaild IVs.}
 #'    \item{\code{p.value}}{The p-value of the endogeneity test.}
-#'    \item{\code{check}}{Indicator for whether \eqn{H_0:\Sigma_{12}=0} is rejected or not.}
+#'    \item{\code{check}}{The indicator that \eqn{H_0:\Sigma_{12}=0} is rejected.}
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' n = 500; L = 600; s = 3; k = 10; px = 10;
+#' n = 500; L = 11; s = 3; k = 10; px = 10;
 #' alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 #' phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
 #' epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
@@ -41,7 +42,7 @@
 #' Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
 #' endo.test.model <- endo.test(Y,D,Z,X)
 #' summary(endo.test.model)
-#' }
+#'
 #'
 #' @references {
 #' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Testing endogeneity with high dimensional covariates, \emph{Journal of Econometrics}, Elsevier, vol. 207(1), pages 175-187. \cr
@@ -50,7 +51,7 @@
 #'
 #'
 endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLasso","DeLasso","OLS"),
-                       voting = c('MaxClique','MP'), alpha=0.05){
+                       voting = c('MaxClique','MP'), alpha=0.05,tuning.1st=NULL, tuning.2nd=NULL){
   # Check and Clean Input Type #
   # Check Y
   method = match.arg(method)
@@ -120,32 +121,61 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   # Estimate Relevant IVs
   voting = match.arg(voting)
   if (invalid) {
-    SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method)
-    Set = sort(unique(unlist(SetHats$VHat)))
+    SetHats = TSHT.VHat(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting, method=method,tuning.1st=tuning.1st, tuning.2nd=tuning.2nd)
+    Set = SetHats$VHat
   } else {
-    SetHats <- endo.SHat(ITT_Y = ITT_Y,ITT_D = ITT_D,WUMat = WUMat,
-                         SigmaSqD = SigmaSqD,SigmaSqY = SigmaSqY,
-                         SigmaYD=SigmaYD)
+    SetHats <- endo.SHat(n,ITT_D,V.gamma,method=method,tuning.1st=tuning.1st, tuning.2nd=tuning.2nd)
     Set = SetHats
   }
-  WUMat = inputs$WUMat
 
-  # Obtain point est and our test statistic Q
-  betaHat = t(inputs$ITT_Y[Set]) %*% inputs$ITT_D[Set] / (t(inputs$ITT_D[Set])  %*% inputs$ITT_D[Set])
-  Sigma11 = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD # Sigma11.hat
-  Sigma12 = inputs$SigmaYD-betaHat*inputs$SigmaSqD # Sigma12.hat
+  if(typeof(Set)=="list"){
+    Q = Sigma12 = p.value = check = vector("list", length(Set))
+    names(Set) =names(Q) = names(Sigma12) = names(p.value) = names(check) = paste0("MaxClique",1:length(Set))
+    for(i.VHat in 1:length(Set)){
+      VHat.i = Set[[i.VHat]]
+      betaHat.i = as.numeric((t(ITT_Y[VHat.i]) %*% ITT_D[VHat.i]) / (t(ITT_D[VHat.i])  %*% ITT_D[VHat.i]))
+      Sigma11.i = inputs$SigmaSqY + betaHat.i^2 * inputs$SigmaSqD - 2*betaHat.i * inputs$SigmaYD # Sigma11.hat
+      Sigma12.i = inputs$SigmaYD-betaHat.i*inputs$SigmaSqD # Sigma12.hat
 
-  Var1 = Sigma11 *(t(inputs$ITT_D[Set]) %*%  ((t(inputs$WUMat) %*% inputs$WUMat/ n)[Set,Set]) %*% inputs$ITT_D[Set]) / (t(inputs$ITT_D[Set]) %*% inputs$ITT_D[Set])^2
-  Var2 = inputs$SigmaSqY*inputs$SigmaSqD-inputs$SigmaYD^2+2*(betaHat*inputs$SigmaSqD-inputs$SigmaYD)^2  # VarThetahat
+      Var1.i = Sigma11.i *(t(ITT_D[VHat.i]) %*%  ((t(WUMat) %*% WUMat/ n)[VHat.i,VHat.i]) %*% ITT_D[VHat.i]) / (t(ITT_D[VHat.i]) %*% ITT_D[VHat.i])^2
+      Var2.i = SigmaSqY*SigmaSqD-SigmaYD^2+2*(betaHat.i*SigmaSqD-SigmaYD)^2  # VarThetahat
 
-  VarSig12 = inputs$SigmaSqD^2*Var1+Var2
-  Q = sqrt(n)*Sigma12/sqrt(VarSig12) # our test statistic
+      VarSig12.i = inputs$SigmaSqD^2*Var1.i+Var2.i
+      Q.i = sqrt(n)*Sigma12.i/sqrt(VarSig12.i) # our test statistic
+      p.value.i <- 2*(1-pnorm(abs(Q.i)))
+      check.i <- (abs(Q.i)>qnorm(1-alpha/2))
 
-  if (!is.null(colnames(Z))) {
-    VHat = colnames(Z)[Set]
+      if (!is.null(colnames(Z))) {
+        VHat = colnames(Z)[Set]
+      }
+
+      # store
+      Q[[i.VHat]] = Q.i
+      Sigma12[[i.VHat]] = Sigma12.i
+      p.value[[i.VHat]] = p.value.i
+      check[[i.VHat]] = check.i
+    }
+    if(!is.null(colnames(Z))){
+      Set = lapply(Set, FUN=function(x) colnames(Z)[x])
+    }
+  }else {
+    # Obtain point est and our test statistic Q
+    betaHat = t(inputs$ITT_Y[Set]) %*% inputs$ITT_D[Set] / (t(inputs$ITT_D[Set])  %*% inputs$ITT_D[Set])
+    Sigma11 = inputs$SigmaSqY + betaHat^2 * inputs$SigmaSqD - 2*betaHat * inputs$SigmaYD # Sigma11.hat
+    Sigma12 = inputs$SigmaYD-betaHat*inputs$SigmaSqD # Sigma12.hat
+
+    Var1 = Sigma11 *(t(inputs$ITT_D[Set]) %*%  ((t(inputs$WUMat) %*% inputs$WUMat/ n)[Set,Set]) %*% inputs$ITT_D[Set]) / (t(inputs$ITT_D[Set]) %*% inputs$ITT_D[Set])^2
+    Var2 = inputs$SigmaSqY*inputs$SigmaSqD-inputs$SigmaYD^2+2*(betaHat*inputs$SigmaSqD-inputs$SigmaYD)^2  # VarThetahat
+
+    VarSig12 = inputs$SigmaSqD^2*Var1+Var2
+    Q = sqrt(n)*Sigma12/sqrt(VarSig12) # our test statistic
+
+    if (!is.null(colnames(Z))) {
+      VHat = colnames(Z)[Set]
+    }
+    p.value <- 2*(1-pnorm(abs(Q)))
+    check <- (abs(Q)>qnorm(1-alpha/2))
   }
-  p.value <- 2*(1-pnorm(abs(Q)))
-  check <- (abs(Q)>qnorm(1-alpha/2))
   endo.test.model <- list(Q=Q,Sigma12=Sigma12,VHat=Set,p.value = p.value,check = check,alpha = alpha)
   class(endo.test.model) <- "endotest"
   return(endo.test.model)

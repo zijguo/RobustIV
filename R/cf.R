@@ -10,27 +10,26 @@
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
 #'    \item{\code{CausalEffect}}{The causal effect when the treatment was changed from \code{d1} to \code{d2}.}
 #'
-#' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
+#' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the models
 #' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
 #' and
 #' \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2 + X\psi + v}.
 #' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
-#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-#' If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is increased by one.
+#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the formula for the outcome model.
+#' If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is \code{d1+1}.
 #' @export
 #'
 #'
 #' @importFrom Formula as.Formula
 #'
 #' @examples
-#' \dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 #' X <- as.matrix(mroz[,c("exper","expersq","age")])
 #' cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 #' summary(cf.model)
-#' }
+#'
 #' @references {
 #' Guo, Z. and D. S. Small (2016), Control function instrumental variable estimation of nonlinear causal effect models, \emph{The Journal of Machine Learning Research} 17(1), 3448–3482. \cr
 #' }
@@ -87,7 +86,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
   whichD = !(colnames(X) %in% colnames(Z))
   d = X[,whichD,drop=FALSE]
   if (sum(!whichD) == 0) { # no covariates case
-    if (intercept) {
+    if (intercept) { # intercept
       first.model <- lm(d~Z)
       e1 <- first.model$residuals[,1] # so the first term of d should be "D"
       second.model <- lm(Y~d+e1)
@@ -116,7 +115,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         CausalEffect <- (d.target-d.base)%*%cf.coef[-1]
       }
 
-    } else {
+    } else { # no intercept
       first.model <- lm(d~0+Z)
       e1 <- first.model$residuals[,1]
       second.model <- lm(Y~0+d+e1)
@@ -150,7 +149,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
     X = X[,!whichD,drop=FALSE]
     whichZ = !(colnames(Z) %in% colnames(X))
     Z = Z[,whichZ,drop=FALSE]
-    if (intercept) {
+    if (intercept) { # intercept
       first.model <- lm(d~Z+X)
       e1 <- first.model$residuals[,1] # so the first term of d should be "D"
       second.model <- lm(Y~d+X+e1)
@@ -179,7 +178,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         CausalEffect <- (d.target-d.base)%*%cf.coef[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))]
       }
 
-    } else {
+    } else { # no intercept
       first.model <- lm(d~0+Z+X)
       e1 <- first.model$residuals[,1]
       second.model <- lm(Y~0+d+X+e1)

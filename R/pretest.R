@@ -1,5 +1,5 @@
 #' @title Prestest estimator
-#' @description This function implements the pretest approach  for estimation and inference of nonlinear treatment effects.
+#' @description This function implements the pretest estimator by comparing the control function and the TSLS estimators.
 #'
 #' @param formula A formula describing the model to be fitted.
 #' @param alpha The significant level. (default = \code{0.05})
@@ -9,7 +9,7 @@
 #' and
 #' \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2+X\psi + v}.
 #' Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
-#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
+#' the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in must be included in the formula for the outcome model.
 
 #' @return
 #'    \code{pretest} returns an object of class "pretest", which is a list containing the following components:
@@ -17,19 +17,18 @@
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
 #'    \item{\code{Hausman.stat}}{The Hausman test statistic used to test the validity of control function.}
 #'    \item{\code{p.value}}{The p-value of Hausman test.}
-#'    \item{\code{cf.check}}{Indicator for whether the control function is valid or not.}
+#'    \item{\code{cf.check}}{the indicator that the control function is valid.}
 #' @export
 #'
 #'
 #' @examples
-#' \dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 #' X <- as.matrix(mroz[,c("exper","expersq","age")])
 #' pretest.model <- pretest(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 #' summary(pretest.model)
-#' }
+#'
 #' @references {
 #' Guo, Z. and D. S. Small (2016), Control function instrumental variable estimation of nonlinear causal effect models, \emph{The Journal of Machine Learning Research} 17(1), 3448–3482. \cr
 #' }

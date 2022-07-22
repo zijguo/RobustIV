@@ -4,11 +4,11 @@ Title: Robust Instrumental Variable Methods
 Version: 0.2.3
 Author: Taehyeon Koo, Zhenyu Wang, Wei Yuan, Sai Li, Hyunseung Kang, Dylan Small, Zijian Guo   
 Maintainer: Zijian Guo <zijguo@stat.rutgers.edu>
-Description: This package provides functions for robust causal inference with possibly invalid instrumental variables. For linear models, we implement TSHT, SearchingSampling, and endogeneity test in low and high dimensions. The package also provides inference for non-linear outcome models with the control function method and SpotIV. 
+Description: This package provides functions for causal inference with possibly invalid instrumental variables. For linear models, we implement TSHT, SearchingSampling, and endogeneity test in low and high dimensions. The package also provides inference for non-linear outcome models with the control function method and SpotIV. 
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.0
+RoxygenNote: 7.1.2
 Imports: AER, flare, glmnet, MASS, Matrix, stats, dr, orthoDr, foreach, igraph, intervals, CVXR
 NeedsCompilation: no
 Suggests: 

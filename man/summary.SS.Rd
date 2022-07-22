@@ -9,6 +9,9 @@
 \arguments{
 \item{object}{SS object}
 }
+\value{
+
+}
 \description{
 Summary of SS
 }

@@ -28,7 +28,7 @@
 #' \item{ci}{1-alpha confidence interval for beta.}
 #' \item{SHat}{The set of relevant IVs.}
 #' \item{VHat}{The initial set of relevant and valid IVs.}
-#' \item{check}{Indicator for whether the plurality rule is satisfied.}
+#' \item{check}{The indicator that the plurality rule is satisfied.}
 
 #' @export
 #' @import intervals MASS CVXR glmnet
@@ -346,6 +346,5 @@ Searching.CI.sampling <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, InitiSet
 #   out <- list(SHat=SHat, VHat=VHat, voting.mat=VHats.boot.sym)
 #   return(out)
 # }
-
 
 

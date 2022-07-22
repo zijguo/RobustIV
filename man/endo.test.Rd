@@ -13,7 +13,9 @@ endo.test(
   invalid = FALSE,
   method = c("Fast.DeLasso", "DeLasso", "OLS"),
   voting = c("MaxClique", "MP"),
-  alpha = 0.05
+  alpha = 0.05,
+  tuning.1st = NULL,
+  tuning.2nd = NULL
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ endo.test(
 \item{voting}{The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})}
 
 \item{alpha}{The significance level for the confidence interval. (default = \code{0.05})}
+
+\item{tuning.1st}{tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
+
+\item{tuning.2nd}{tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})}
 }
 \value{
 \code{endo.test} returns an object of class "endotest", which is a list containing the following components:
@@ -41,20 +47,19 @@ endo.test(
    \item{\code{Sigma12}}{Estimated covaraince of the regression errors.}
    \item{\code{VHat}}{The set of vaild IVs.}
    \item{\code{p.value}}{The p-value of the endogeneity test.}
-   \item{\code{check}}{Indicator for whether \eqn{H_0:\Sigma_{12}=0} is rejected or not.}
+   \item{\code{check}}{The indicator that \eqn{H_0:\Sigma_{12}=0} is rejected.}
 }
 \description{
-Conduct the endogeneity test with with high dimensional and possibly invalid instrumental variables.
+Conduct the endogeneity test with high dimensional and possibly invalid instrumental variables.
 }
 \details{
 When \code{voting = MaxClique} and there are multiple maximum cliques, we use union of maximum cliques as \code{VHat} and calculate \code{Q} and \code{Sigma12}
 by this \code{VHat}.
-As for tuning parameter in the 1st stage and 2nd stage, for method "OLS" we adopt \eqn{sqrt(log(n))}, and for other methods
-we adopt \eqn{max{sqrt{2.01*log(pz)}, sqrt{log(n)}}}.
+As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
+we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
 }
 \examples{
-\dontrun{
-n = 500; L = 600; s = 3; k = 10; px = 10;
+n = 500; L = 11; s = 3; k = 10; px = 10;
 alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
 epsilonSigma = matrix(c(1,0.8,0.8,1),2,2)
@@ -65,7 +70,7 @@ D =  0.5 + Z \%*\% gamma + X \%*\% psi + epsilon[,1]
 Y = -0.5 + Z \%*\% alpha + D * beta + X \%*\% phi + epsilon[,2]
 endo.test.model <- endo.test(Y,D,Z,X)
 summary(endo.test.model)
-}
+
 
 }
 \references{

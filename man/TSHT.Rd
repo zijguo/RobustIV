@@ -49,10 +49,10 @@ TSHT(
     \item{\code{SHat}}{The set of relevant IVs.}
     \item{\code{VHat}}{The set of relevant and valid IVs.}
     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
-    \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
+    \item{\code{check}}{The indicator that the majority rule is satisfied.}
 }
 \description{
-Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables.
 }
 \details{
 When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
@@ -60,4 +60,22 @@ When \code{voting = MaxClique} and there are multiple maximum cliques, \code{bet
 where each element of list corresponds to each maximum clique.
 As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
 we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
+}
+\examples{
+\dontrun{
+Y <- mroz[,"lwage"]
+D <- mroz[,"educ"]
+Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+X <- mroz[,"age"]
+Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
+summary(Searching.model)
+SS.model <- SearchingSampling(Y,D,Z,X)
+summary(SS.model)
+
+}
+}
+\references{
+{
+Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
+}
 }

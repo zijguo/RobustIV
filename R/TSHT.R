@@ -1,7 +1,7 @@
 
 
 #' @title Two-Stage Hard Thresholding
-#' @description Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings.
+#' @description Perform Two-Stage Hard Thresholding method, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables.
 #'
 #' @param Y The outcome observation, a vector of length \eqn{n}.
 #' @param D The treatment observation, a vector of length \eqn{n}.
@@ -28,8 +28,23 @@
 #'     \item{\code{SHat}}{The set of relevant IVs.}
 #'     \item{\code{VHat}}{The set of relevant and valid IVs.}
 #'     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
-#'     \item{\code{check}}{Indicator for whether the majority rule is satisfied or not.}
+#'     \item{\code{check}}{The indicator that the majority rule is satisfied.}
 #' @export
+#' @examples
+#'\dontrun{
+#' Y <- mroz[,"lwage"]
+#' D <- mroz[,"educ"]
+#' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
+#' X <- mroz[,"age"]
+#' Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
+#' summary(Searching.model)
+#' SS.model <- SearchingSampling(Y,D,Z,X)
+#' summary(SS.model)
+#'
+#' }
+#' @references {
+#' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
+#' }
 TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"),
                  voting = c('MaxClique','MP','Conservative'), robust = FALSE, alpha=0.05,
                  tuning.1st=NULL, tuning.2nd=NULL) {
@@ -187,6 +202,5 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
 
   return(TSHTObject)
 }
-
 
 

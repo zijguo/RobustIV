@@ -23,23 +23,22 @@ cf(formula, d1 = NULL, d2 = NULL)
 Implement the control function method for estimation and inference of nonlinear treatment effects.
 }
 \details{
-For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the model where
+For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the models
 \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
 and
 \eqn{D = \gamma_0 + Z\gamma_1 + Z^2\gamma_2 + X\psi + v}.
 Here, the outcome is \code{Y}, the endogenous variables are \code{D} and \code{I(D^2)}, the baseline covariates are \code{X}, and the instrument variables are \code{Z}. The formula environment follows
-the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the first of the right side of the formula.
-If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is increased by one.
+the formula environment in the ivreg function in the AER package. The linear term of the endogenous variable, for example, \code{D}, must be included in the formula for the outcome model.
+If either one of \code{d1} or \code{d2} is missing or \code{NULL}, \code{CausalEffect} is calculated assuming that the baseline value \code{d1} is the median of the treatment and the target value \code{d2} is \code{d1+1}.
 }
 \examples{
-\dontrun{
 Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
 X <- as.matrix(mroz[,c("exper","expersq","age")])
 cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
 summary(cf.model)
-}
+
 }
 \references{
 {

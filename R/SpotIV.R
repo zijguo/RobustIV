@@ -9,9 +9,9 @@
 #' @param d1 A treatment value for computing CATE(d1,d2|w0).
 #' @param d2 A treatment value for computing CATE(d1,d2|w0).
 #' @param w0  A value of measured covariates and instruments for computing CATE(d1,d2|w0).
-#' @param M.est If \code{TRUE}, estimate \code{M} based on BIC, otherwise \code{M} is not estimated and input or default value of \code{M} is used. (default = \code{TRUE})
+#' @param M.est If \code{TRUE}, \code{M} is estimated based on BIC, otherwise \code{M} is specified by input value of \code{M}. (default = \code{TRUE})
 #' @param M The dimension of indices in the outcome model, from 1 to 3. (default = \code{2})
-#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval. (default = \code{40})
+#' @param bs.Niter The number of bootstrap resampling size for computing the confidence interval. (default = \code{40})
 #' @param bw  A (M+1) by 1 vector bandwidth specification. (default = \code{NULL})
 
 #' @return
@@ -21,7 +21,7 @@
 #'     \item{\code{cate.sdHat}}{The estimated standard error of cateHat.}
 #'     \item{\code{SHat}}{The set of relevant IVs.}
 #'     \item{\code{VHat}}{The set of relevant and valid IVs.}
-#'     \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
+#'     \item{\code{Maj.pass}}{The indicator that the majority rule is satisfied.}
 #' @import dr
 #' @import orthoDr
 #' @import foreach
@@ -30,7 +30,6 @@
 #'
 
 #' @examples
-#' \dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -40,7 +39,7 @@
 #' w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 #' SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
 #' summary(SpotIV.model)
-#'}
+#'
 #'
 #' @references {
 #' Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
@@ -120,7 +119,7 @@ SpotIV<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,  d1, d2 , w0,
   v.hat <- D-Z%*%gam.hat
 
   #voting and applying the majority rule
-  if(is.null(V)){
+  if(is.null(V)){ # allowing for invalid IVs and do IV selection
     #get reduced-from
     SIR.re <-SIR.est(X.cov=cbind(Z,v.hat), Y, M= M, M.est=M.est)
     M <- ncol(SIR.re$theta.hat)
@@ -138,7 +137,7 @@ SpotIV<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,  d1, d2 , w0,
     beta.hat<-sapply(1:M, function(m) median(Gam.hat[SHat,m]/gam.hat[SHat]))
     beta.hat <- matrix(beta.hat,nrow=1,ncol=M)
     pi.hat<- Gam.hat - gam.hat %*% beta.hat
-  }else{###oracle method
+  }else{ ### assume all IVs to be valid
     SIR.re <-SIR.est(X.cov=cbind(Z%*%gam.hat,Z[,-V],v.hat), Y, M= M, M.est=M.est)
     M <- ncol(SIR.re$theta.hat)
     beta.hat<-matrix(SIR.re$theta.hat[1,],nrow=1,ncol=M)

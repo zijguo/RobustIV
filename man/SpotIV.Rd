@@ -39,11 +39,11 @@ SpotIV(
 
 \item{w0}{A value of measured covariates and instruments for computing CATE(d1,d2|w0).}
 
-\item{M.est}{If \code{TRUE}, estimate \code{M} based on BIC, otherwise \code{M} is not estimated and input or default value of \code{M} is used. (default = \code{TRUE})}
+\item{M.est}{If \code{TRUE}, \code{M} is estimated based on BIC, otherwise \code{M} is specified by input value of \code{M}. (default = \code{TRUE})}
 
 \item{M}{The dimension of indices in the outcome model, from 1 to 3. (default = \code{2})}
 
-\item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval. (default = \code{40})}
+\item{bs.Niter}{The number of bootstrap resampling size for computing the confidence interval. (default = \code{40})}
 
 \item{bw}{A (M+1) by 1 vector bandwidth specification. (default = \code{NULL})}
 }
@@ -54,13 +54,12 @@ SpotIV(
     \item{\code{cate.sdHat}}{The estimated standard error of cateHat.}
     \item{\code{SHat}}{The set of relevant IVs.}
     \item{\code{VHat}}{The set of relevant and valid IVs.}
-    \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
+    \item{\code{Maj.pass}}{The indicator that the majority rule is satisfied.}
 }
 \description{
 Perform causal inference in the semi-parametric outcome model with possibly invalid IVs.
 }
 \examples{
-\dontrun{
 Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -70,7 +69,7 @@ d2 = median(D); d1 = d2+1;
 w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
 summary(SpotIV.model)
-}
+
 
 }
 \references{

@@ -36,7 +36,7 @@ ProbitControl(
 
 \item{w0}{A vector for computing CATE(d1,d2|w0).}
 
-\item{bs.Niter}{The number of bootstrap resampling for computing the confidence interval.}
+\item{bs.Niter}{The number of bootstrap resampling size for computing the confidence interval.}
 }
 \value{
 \code{ProbitControl} returns an object of class "SpotIV", which is a list containing the following components:
@@ -46,13 +46,12 @@ ProbitControl(
     \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
     \item{\code{SHat}}{The estimated set of relevant IVs.}
     \item{\code{VHat}}{The estimated set of relevant and valid IVs.}
-    \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
+    \item{\code{Maj.pass}}{The indicator that the majority rule is satisfied.}
 }
 \description{
 Perform causal inference in the probit outcome model with possibly invalid IVs under the majority rule.
 }
 \examples{
-\dontrun{
 Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -62,7 +61,7 @@ d2 = median(D); d1 = d2+1;
 w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
 summary(Probit.model)
-}
+
 
 }
 \references{

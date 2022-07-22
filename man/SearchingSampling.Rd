@@ -64,7 +64,7 @@ SearchingSampling(
 \item{ci}{1-alpha confidence interval for beta.}
 \item{SHat}{The set of relevant IVs.}
 \item{VHat}{The initial set of relevant and valid IVs.}
-\item{check}{Indicator for whether the plurality rule is satisfied.}
+\item{check}{The indicator that the plurality rule is satisfied.}
 }
 \description{
 Construct Searching and Sampling confidence intervals for the causal effect, which provides the robust inference of the treatment effect in the presence of invalid instrumental variables in both low-dimensional and high-dimensional settings. It is robust to the mistakes in separating valid and invalid instruments.

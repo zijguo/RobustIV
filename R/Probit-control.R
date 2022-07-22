@@ -10,7 +10,7 @@
 #' @param d1 A treatment value for computing CATE(d1,d2|w0).
 #' @param d2 A treatment value for computing CATE(d1,d2|w0).
 #' @param w0  A vector for computing CATE(d1,d2|w0).
-#' @param bs.Niter The number of bootstrap resampling for computing the confidence interval.
+#' @param bs.Niter The number of bootstrap resampling size for computing the confidence interval.
 #'
 #' @return
 #'     \code{ProbitControl} returns an object of class "SpotIV", which is a list containing the following components:
@@ -20,7 +20,7 @@
 #'     \item{\code{cate.sdHat}}{The estimated standard deviation of \code{cateHat}.}
 #'     \item{\code{SHat}}{The estimated set of relevant IVs.}
 #'     \item{\code{VHat}}{The estimated set of relevant and valid IVs.}
-#'     \item{\code{Maj.pass}}{Indicator for whether the majority rule is satisfied or not.}
+#'     \item{\code{Maj.pass}}{The indicator that the majority rule is satisfied.}
 #'
 #' @importFrom stats binomial glm median pnorm sd
 #' @export
@@ -28,7 +28,6 @@
 #'
 #'
 #' @examples
-#' \dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -38,7 +37,7 @@
 #' w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 #' Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0)
 #' summary(Probit.model)
-#'}
+#'
 #'
 #' @references {
 #' Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
@@ -105,7 +104,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,
   sig.v.hat<- mean(v.hat^2)
   gam.cov<-n*vcov(gam.re)[1:pz,1:pz]
 
-  if(invalid){
+  if(invalid){ #
     #reduced form
     Gam.re<-glm(Y~cbind(Z,v.hat)-1, family=binomial(link='probit'))
     Gam.hat<-Gam.re$coef[-length(Gam.re$coef)]
@@ -124,7 +123,7 @@ ProbitControl<- function(Y, D, Z, X=NULL, intercept=TRUE, invalid=FALSE,
     beta.hat<-median(Gam.hat[SHat]/gam.hat[SHat])
     pi.hat<- Gam.hat - gam.hat * beta.hat
     kappa.hat<-lam.hat-beta.hat #coef of v.hat
-  }else{ #valid IV method
+  }else{ # valid IV method
     SHat=1:pz
     if((!intercept) && px==0){
       coef.re<-glm(Y~D+v.hat-1)$coef
