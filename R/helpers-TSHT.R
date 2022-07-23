@@ -112,7 +112,7 @@ TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'
                          2*(ITT_D[k]/ITT_D[j])*Temp[k,j])
     }
 
-    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn2 #sqrt(log(n))
+    PHat.bool.j = abs(pi.j) <= sqrt(SE.j)*Tn2
     VHat.bool.j = PHat.bool.j * SHat.bool
     VHats.bool[as.character(SHat), as.character(j)] = VHat.bool.j[SHat]
   }
@@ -140,7 +140,7 @@ TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'
     max.clique <- igraph::largest.cliques(voting.graph)
     # VHat <- unique(igraph::as_ids(Reduce(c,max.clique))) # take the union if multiple max cliques exist
     # VHat <- sort(as.numeric(VHat))
-    VHat = lapply(max.clique, FUN=function(x) sort(as.numeric(x)))
+    VHat = lapply(max.clique, FUN=function(x) sort(as.numeric(names(x))))
     n.VHat = length(VHat[[1]])
     if(length(VHat)==1) VHat = VHat[[1]]
   } else if (voting == 'MP') {

@@ -147,6 +147,7 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
       check=F
     }
     betaHat = beta.sdHat = ci = vector("list", length(VHat))
+    # name of list
     names(VHat) = names(betaHat) = names(beta.sdHat) = names(ci) = paste0("MaxClique",1:length(VHat))
     for(i.VHat in 1:length(VHat)){
       VHat.i = VHat[[i.VHat]]
