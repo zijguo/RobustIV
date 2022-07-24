@@ -145,10 +145,6 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
       p.value.i <- 2*(1-pnorm(abs(Q.i)))
       check.i <- (abs(Q.i)>qnorm(1-alpha/2))
 
-      if (!is.null(colnames(Z))) {
-        VHat = colnames(Z)[Set]
-      }
-
       # store
       Q[[i.VHat]] = Q.i
       Sigma12[[i.VHat]] = Sigma12.i
