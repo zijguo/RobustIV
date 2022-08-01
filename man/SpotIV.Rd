@@ -60,6 +60,7 @@ SpotIV(
 Perform causal inference in the semi-parametric outcome model with possibly invalid IVs.
 }
 \examples{
+\dontrun{
 Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -69,7 +70,7 @@ d2 = median(D); d1 = d2+1;
 w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
 summary(SpotIV.model)
-
+}
 
 }
 \references{

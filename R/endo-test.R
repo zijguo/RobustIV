@@ -31,6 +31,7 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' n = 500; L = 11; s = 3; k = 10; px = 10;
 #' alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 #' phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
@@ -42,7 +43,7 @@
 #' Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
 #' endo.test.model <- endo.test(Y,D,Z,X)
 #' summary(endo.test.model)
-#'
+#'}
 #'
 #' @references {
 #' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Testing endogeneity with high dimensional covariates, \emph{Journal of Econometrics}, Elsevier, vol. 207(1), pages 175-187. \cr
@@ -91,6 +92,8 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
   } else {
     W = Z
   }
+  # centralize W
+  W = scale(W, center = T, scale = F)
 
   # All the other argument
   stopifnot(is.logical(intercept))
@@ -167,7 +170,7 @@ endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLas
     Q = sqrt(n)*Sigma12/sqrt(VarSig12) # our test statistic
 
     if (!is.null(colnames(Z))) {
-      VHat = colnames(Z)[Set]
+      Set = colnames(Z)[Set]
     }
     p.value <- 2*(1-pnorm(abs(Q)))
     check <- (abs(Q)>qnorm(1-alpha/2))

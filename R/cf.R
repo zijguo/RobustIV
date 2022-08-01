@@ -9,6 +9,8 @@
 #'    \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
 #'    \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
 #'    \item{\code{CausalEffect}}{The causal effect when the treatment was changed from \code{d1} to \code{d2}.}
+#'    \item{\code{CausalEffect.sd}}{The standard error of the estimate of the causal effect.}
+#'    \item{\code{CausalEffect.ci}}{The 95% confidence interval of the causal effect.}
 #'
 #' @details For example, the formula \code{Y ~ D + I(D^2)+X|Z+I(Z^2)+X} describes the models
 #' \eqn{Y = \alpha_0 + D\beta_1 + D^2\beta_2 + X\phi + u}
@@ -115,6 +117,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         CausalEffect <- (d.target-d.base)%*%cf.coef[-1]
       }
 
+      CausalEffect.sd <- sqrt((d.target-d.base)%*%(cf.vcov[-1,-1])%*%cbind(d.target-d.base))
     } else { # no intercept
       first.model <- lm(d~0+Z)
       e1 <- first.model$residuals[,1]
@@ -142,6 +145,7 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
         CausalEffect <- (d.target-d.base)%*%cf.coef
       }
+      CausalEffect.sd <- sqrt((d.target-d.base)%*%cf.vcov%*%cbind(d.target-d.base))
     }
 
 
@@ -177,7 +181,8 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
         CausalEffect <- (d.target-d.base)%*%cf.coef[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))]
       }
-
+      CausalEffect.sd <- sqrt((d.target-d.base)%*%(cf.vcov[-c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X))),
+                                                          -c(1,seq(length(cf.coef)-ncol(X)+1,length =ncol(X)))])%*%cbind(d.target-d.base))
     } else { # no intercept
       first.model <- lm(d~0+Z+X)
       e1 <- first.model$residuals[,1]
@@ -206,11 +211,14 @@ cf <- function(formula,d1 = NULL,d2 = NULL){
         d.target <- sapply(colnames(d),function(x){eval(parse(text=x))})
         CausalEffect <- (d.target-d.base)%*%cf.coef[(1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))]]
       }
+      CausalEffect.sd <- sqrt((d.target-d.base)%*%(cf.vcov[(1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))],
+                                                     (1:length(cf.coef))[-seq(length(cf.coef)-ncol(X)+1,length =ncol(X))]])%*%cbind(d.target-d.base))
 
     }
 
   }
-  out <- list(coefficients=cf.coef,vcov =cf.vcov,CausalEffect=CausalEffect,n=n,d1 = d1,d2 = d2)
+  CausalEffect.ci <- c(CausalEffect-qnorm(0.975)*CausalEffect.sd,CausalEffect+qnorm(0.975)*CausalEffect.sd)
+  out <- list(coefficients=cf.coef,vcov =cf.vcov,CausalEffect=CausalEffect,CausalEffect.sd =CausalEffect.sd,CausalEffect.ci =CausalEffect.ci,n=n,d1 = d1,d2 = d2)
   class(out) = 'cf'
   return(out)
 }
@@ -233,8 +241,11 @@ summary.cf<- function(object,...){
   cmat <- cbind(coeff,std,t.value,pr.t)
   colnames(cmat) <- c("Estimate", "Std.Err", "t value", "Pr(>|t|)")
   printCoefmat(cmat, digits = max(3L, getOption("digits") - 3L))
+  cat(rep("_", 30), "\n")
   if (!is.null(cf$d2)&!is.null(cf$d1)) {
-    cat("The causal effect when changing treatment from",cf$d1,"to",cf$d2,": ",cf$CausalEffect,"\n" )
+    cat("\nThe estimate causal effect when changing treatment from",cf$d1,"to",cf$d2,": ",cf$CausalEffect,"\n" )
+    cat("\nStandard error of the estimate of the causal effect:",cf$CausalEffect.sd,"\n")
+    cat("\n95% confidence interval for the causal effect: [",cf$CausalEffect.ci[1],",",cf$CausalEffect.ci[2],"]\n",sep = "")
   }
 }
 

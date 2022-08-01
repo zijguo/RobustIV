@@ -62,17 +62,13 @@ As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for m
 we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
 }
 \examples{
-\dontrun{
 Y <- mroz[,"lwage"]
 D <- mroz[,"educ"]
 Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
 X <- mroz[,"age"]
-Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
-summary(Searching.model)
-SS.model <- SearchingSampling(Y,D,Z,X)
-summary(SS.model)
+TSHT.model <- TSHT(Y,D,Z,X)
+summary(TSHT.model)
 
-}
 }
 \references{
 {

@@ -14,10 +14,7 @@ cf(formula, d1 = NULL, d2 = NULL)
 \item{d2}{The target treatment value.}
 }
 \value{
-\code{cf} returns an object of class "cf", which is a list containing the following components:
-   \item{\code{coefficients}}{The estimate of the coefficients in the outcome model.}
-   \item{\code{vcov}}{The estimated covariance matrix of coefficients.}
-   \item{\code{CausalEffect}}{The causal effect when the treatment was changed from \code{d1} to \code{d2}.}
+
 }
 \description{
 Implement the control function method for estimation and inference of nonlinear treatment effects.

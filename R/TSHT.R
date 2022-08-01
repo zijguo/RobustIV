@@ -31,17 +31,13 @@
 #'     \item{\code{check}}{The indicator that the majority rule is satisfied.}
 #' @export
 #' @examples
-#'\dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
 #' X <- mroz[,"age"]
-#' Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
-#' summary(Searching.model)
-#' SS.model <- SearchingSampling(Y,D,Z,X)
-#' summary(SS.model)
+#' TSHT.model <- TSHT(Y,D,Z,X)
+#' summary(TSHT.model)
 #'
-#' }
 #' @references {
 #' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Confidence intervals for causal effects with invalid instruments by using two-stage hard thresholding with voting, \emph{J. R. Stat. Soc. B}, 80: 793-815. \cr
 #' }
@@ -203,5 +199,4 @@ TSHT <- function(Y,D,Z,X,intercept=TRUE, method=c("OLS","DeLasso","Fast.DeLasso"
 
   return(TSHTObject)
 }
-
 

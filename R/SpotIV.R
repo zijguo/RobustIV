@@ -12,7 +12,7 @@
 #' @param M.est If \code{TRUE}, \code{M} is estimated based on BIC, otherwise \code{M} is specified by input value of \code{M}. (default = \code{TRUE})
 #' @param M The dimension of indices in the outcome model, from 1 to 3. (default = \code{2})
 #' @param bs.Niter The number of bootstrap resampling size for computing the confidence interval. (default = \code{40})
-#' @param bw  A (M+1) by 1 vector bandwidth specification. (default = \code{NULL})
+#' @param bw A (M+1) by 1 vector bandwidth specification. (default = \code{NULL})
 
 #' @return
 #'     \code{SpotIV} returns an object of class "SpotIV", which "SpotIV" is a list containing the following components:
@@ -24,12 +24,12 @@
 #'     \item{\code{Maj.pass}}{The indicator that the majority rule is satisfied.}
 #' @import dr
 #' @import orthoDr
-#' @import foreach
 #' @importFrom stats binomial glm median pnorm sd
 #' @export
 #'
 
 #' @examples
+#' \dontrun{
 #' Y <- mroz[,"lwage"]
 #' D <- mroz[,"educ"]
 #' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
@@ -39,7 +39,7 @@
 #' w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
 #' SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5])
 #' summary(SpotIV.model)
-#'
+#'}
 #'
 #' @references {
 #' Li, S., Guo, Z. (2020), Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables, Preprint \emph{arXiv:2010.09922}.\cr
