@@ -12,30 +12,31 @@
 #' @param voting The voting option used to estimate valid IVs. \code{'MP'} stands for majority and plurality voting, \code{'MaxClique'} stands for finding maximal clique in the IV voting matrix, and \code{'Conservative'} stands for conservative voting procedure. Conservative voting is used to get an initial estimator of valid IVs in the Searching-Sampling method. (default= \code{'MaxClique'}).
 #' @param robust If \code{TRUE}, the method is robust to heteroskedastic errors. If \code{FALSE}, the method assumes homoskedastic errors. (default = \code{FALSE})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
-#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
-#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.1st The tuning parameter used in the 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.2nd The tuning parameter used in the 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
 #'
-#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}.
+#' @details When \code{robust = TRUE}, the \code{method} will be input as \code{’OLS’}.
 #' When \code{voting = MaxClique} and there are multiple maximum cliques, \code{betaHat},\code{beta.sdHat},\code{ci}, and \code{VHat} will be list objects
 #' where each element of list corresponds to each maximum clique.
-#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
-#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
+#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}} for both tuning parameters, and for other methods
+#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}} for both tuning parameters.
 #
 #' @return \code{TSHT} returns an object of class "TSHT", which is a list containing the following components:
 #'     \item{\code{betaHat}}{The estimate of treatment effect.}
 #'     \item{\code{beta.sdHat}}{The estimated standard error of \code{betaHat}.}
 #'     \item{\code{ci}}{The 1-alpha confidence interval for \code{beta}.}
-#'     \item{\code{SHat}}{The set of relevant IVs.}
-#'     \item{\code{VHat}}{The set of relevant and valid IVs.}
-#'     \item{\code{voting.mat}}{The voting matrix on whether the elements of each \code{SHat} are valid or not.}
+#'     \item{\code{SHat}}{The set of selected relevant IVs.}
+#'     \item{\code{VHat}}{The set of selected relevant and valid IVs.}
+#'     \item{\code{voting.mat}}{The voting matrix.}
 #'     \item{\code{check}}{The indicator that the majority rule is satisfied.}
 #' @export
 #' @examples
-#' Y <- mroz[,"lwage"]
-#' D <- mroz[,"educ"]
-#' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-#' X <- mroz[,"age"]
-#' TSHT.model <- TSHT(Y,D,Z,X)
+#' data("lineardata")
+#' Y <- lineardata[,"Y"]
+#' D <- lineardata[,"D"]
+#' Z <- as.matrix(lineardata[,c("Z.1","Z.2","Z.3","Z.4","Z.5","Z.6","Z.7","Z.8")])
+#' X <- as.matrix(lineardata[,c("age","sex")])
+#' TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 #' summary(TSHT.model)
 #'
 #' @references {

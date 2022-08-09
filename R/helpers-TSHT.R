@@ -350,42 +350,25 @@ Lasso <- function( X, y, lambda = NULL, intercept = TRUE){
   n <- nrow(X);
 
   if  (is.null(lambda)){
-    lambda <- sqrt(qnorm(1-(0.1/p))/n);
-    outLas <- flare::slim(X,y,lambda=c(lambda),method="lq",q=2,verbose=FALSE);
-    # Objective : sqrt(RSS/n) +lambda *penalty
-    if (intercept==TRUE) {
-      return (c(as.vector(outLas$intercept),as.vector(outLas$beta)))
-    }  else {
-      return (as.vector(outLas$beta));
-    }
+    lambda <- "CV.min"
+  }
+  htheta <- if (lambda == "CV.min") {
+    outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
+                                intercept = intercept, standardize = T)
+    as.vector(coef(outLas, s = outLas$lambda.min))
+  } else if (lambda == "CV") {
+    outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
+                                intercept = intercept, standardize = T)
+    as.vector(coef(outLas, s = outLas$lambda.1se))
   } else {
-    # outLas <- cv.glmnet(X, y, family ="gaussian", alpha =1, intercept = intercept, standardize=T);
-    # # Objective :1/2 RSS/n +lambda *penalty
-    # htheta = if(lambda=="CV.min"){
-    #   as.vector(coef(outLas, s=outLas$lambda.min))
-    # }else if(lambda=="CV"){
-    #   as.vector(coef(outLas, s=outLas$lambda.1se))
-    # }else{
-    #   as.vector(coef(outLas, s=lambda))
-    # }
-    htheta <- if (lambda == "CV.min") {
-      outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                                  intercept = intercept, standardize = T)
-      as.vector(coef(outLas, s = outLas$lambda.min))
-    } else if (lambda == "CV") {
-      outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                                  intercept = intercept, standardize = T)
-      as.vector(coef(outLas, s = outLas$lambda.1se))
-    } else {
-      outLas <- glmnet::glmnet(X, y, family = "gaussian", alpha = 1,
-                               intercept = intercept, standardize = T)
-      as.vector(coef(outLas, s = lambda))
-    }
-    if (intercept==TRUE){
-      return (htheta);
-    } else {
-      return (htheta[2:(p+1)]);
-    }
+    outLas <- glmnet::glmnet(X, y, family = "gaussian", alpha = 1,
+                             intercept = intercept, standardize = T)
+    as.vector(coef(outLas, s = lambda))
+  }
+  if (intercept==TRUE){
+    return (htheta);
+  } else {
+    return (htheta[2:(p+1)]);
   }
 }
 

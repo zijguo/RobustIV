@@ -12,20 +12,19 @@
 #' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})
 #' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
-#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
-#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.1st The tuning parameter used in the 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.2nd The tuning parameter used in the 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
 #'
 #' @details
-#' When \code{voting = MaxClique} and there are multiple maximum cliques, we use union of maximum cliques as \code{VHat} and calculate \code{Q} and \code{Sigma12}
-#' by this \code{VHat}.
-#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
-#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
+#' When \code{voting = MaxClique} and there are multiple maximum cliques, the null hypothesis is rejected if one of maximum clique rejects the null.
+#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}} for both tuning parameters, and for other methods
+#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}} for both tuning parameters.
 #'
 #' @return
 #'     \code{endo.test} returns an object of class "endotest", which is a list containing the following components:
-#'    \item{\code{Q}}{Test statistic.}
-#'    \item{\code{Sigma12}}{Estimated covaraince of the regression errors.}
-#'    \item{\code{VHat}}{The set of vaild IVs.}
+#'    \item{\code{Q}}{The test statistic.}
+#'    \item{\code{Sigma12}}{The estimated covaraince of the regression errors.}
+#'    \item{\code{VHat}}{The set of selected vaild IVs.}
 #'    \item{\code{p.value}}{The p-value of the endogeneity test.}
 #'    \item{\code{check}}{The indicator that \eqn{H_0:\Sigma_{12}=0} is rejected.}
 #' @export

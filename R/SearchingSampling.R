@@ -11,39 +11,40 @@
 #' @param Sampling If \code{TRUE}, use the proposed sampling method; else use the proposed searching method. (default=\code{TRUE})
 #' @param alpha The significance level (default=\code{0.05})
 #' @param CI.init An initial range for beta. If \code{NULL}, it will be generated automatically. (default=\code{NULL})
-#' @param a Grid size for constructing beta grids. (default=\code{0.6})
-#' @param rho Initial value constructed for sampling method. (default=\code{NULL})
-#' @param M Re-sampling size. (default = \code{1000})
-#' @param prop Proportion of non-empty intervals for sampling. (default=\code{0.1})
-#' @param filtering Filtering the re-sampled data or not. (default=\code{TRUE})
-#' @param tuning.1st tuning parameter used in 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
-#' @param tuning.2nd tuning parameter used in 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param a The grid size for constructing beta grids. (default=\code{0.6})
+#' @param rho The shrinkage parameter for the sampling method. (default=\code{NULL})
+#' @param M The resampling size for the sampling method. (default = \code{1000})
+#' @param prop The proportion of non-empty intervals used for the sampling method. (default=\code{0.1})
+#' @param filtering Filtering the resampled data or not. (default=\code{TRUE})
+#' @param tuning.1st The tuning parameter used in the 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
+#' @param tuning.2nd The tuning parameter used in the 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
 #'
-#' @details When \code{robust = TRUE}, only \code{’OLS’} can be input to \code{method}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
-#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}}, and for other methods
-#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}}.
+#' @details When \code{robust = TRUE}, the \code{method} will be input as \code{’OLS’}. For \code{rho}, \code{M}, \code{prop}, and \code{filtering}, they are required only for \code{Sampling = TRUE}.
+#' As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for method "OLS" we adopt \eqn{\sqrt{\log n}} for both tuning parameters, and for other methods
+#' we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}} for both tuning parameters.
 #'
 #' @return
 #' \code{SearchingSampling} returns an object of class "SS", which is a list containing the following components:
 #' \item{ci}{1-alpha confidence interval for beta.}
-#' \item{SHat}{The set of relevant IVs.}
-#' \item{VHat}{The initial set of relevant and valid IVs.}
+#' \item{SHat}{The set of selected relevant IVs.}
+#' \item{VHat}{The initial set of selected relevant and valid IVs.}
 #' \item{check}{The indicator that the plurality rule is satisfied.}
 
 #' @export
 #' @import intervals MASS CVXR glmnet
 #' @examples
-#'\dontrun{
-#' Y <- mroz[,"lwage"]
-#' D <- mroz[,"educ"]
-#' Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-#' X <- mroz[,"age"]
+#'
+#' data("lineardata")
+#' Y <- lineardata[,"Y"]
+#' D <- lineardata[,"D"]
+#' Z <- as.matrix(lineardata[,c("Z.1","Z.2","Z.3","Z.4","Z.5","Z.6","Z.7","Z.8")])
+#' X <- as.matrix(lineardata[,c("age","sex")])
 #' Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
 #' summary(Searching.model)
-#' SS.model <- SearchingSampling(Y,D,Z,X)
-#' summary(SS.model)
+#' Sampling.model <- SearchingSampling(Y,D,Z,X)
+#' summary(Sampling.model)
 #'
-#' }
+#'
 #' @references {
 #' Guo, Z. (2021), Causal Inference with Invalid Instruments: Post-selection Problems and A Solution Using Searching and Sampling, Preprint \emph{arXiv:2104.06911}. \cr
 #' }
