@@ -10,7 +10,7 @@
 #' @param intercept Whether the intercept is included. (default = \code{TRUE})
 #' @param invalid If \code{TRUE}, the method is robust to the presence of possibly invalid IVs; If \code{FALSE}, the method assumes all IVs to be valid. (default = \code{FALSE})
 #' @param method The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})
-#' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})
+#' @param voting The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MP'})
 #' @param alpha The significance level for the confidence interval. (default = \code{0.05})
 #' @param tuning.1st The tuning parameter used in the 1st stage to select relevant instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
 #' @param tuning.2nd The tuning parameter used in the 2nd stage to select valid instruments. If \code{NULL}, it will be generated data-dependently, see Details. (default=\code{NULL})
@@ -51,7 +51,7 @@
 #'
 #'
 endo.test <- function(Y,D,Z,X,intercept=TRUE,invalid=FALSE, method=c("Fast.DeLasso","DeLasso","OLS"),
-                       voting = c('MaxClique','MP'), alpha=0.05,tuning.1st=NULL, tuning.2nd=NULL){
+                       voting = c('MP','MaxClique'), alpha=0.05,tuning.1st=NULL, tuning.2nd=NULL){
   # Check and Clean Input Type #
   # Check Y
   method = match.arg(method)

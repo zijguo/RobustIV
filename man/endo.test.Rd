@@ -12,7 +12,7 @@ endo.test(
   intercept = TRUE,
   invalid = FALSE,
   method = c("Fast.DeLasso", "DeLasso", "OLS"),
-  voting = c("MaxClique", "MP"),
+  voting = c("MP", "MaxClique"),
   alpha = 0.05,
   tuning.1st = NULL,
   tuning.2nd = NULL
@@ -33,7 +33,7 @@ endo.test(
 
 \item{method}{The method used to estimate the reduced form parameters. \code{"OLS"} stands for ordinary least squares, \code{"DeLasso"} stands for the debiased Lasso estimator, and \code{"Fast.DeLasso"} stands for the debiased Lasso estimator with fast algorithm. (default = \code{"Fast.DeLasso"})}
 
-\item{voting}{The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MaxClique'})}
+\item{voting}{The voting option used to estimate valid IVs. \code{'MP'} stnads for majority and plurality voting, \code{'MaxClique'} stands for maximum clique in the IV voting matrix. (default = \code{'MP'})}
 
 \item{alpha}{The significance level for the confidence interval. (default = \code{0.05})}
 
