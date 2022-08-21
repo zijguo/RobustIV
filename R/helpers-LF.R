@@ -13,19 +13,20 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
   ### init step function ###
   if(model=="linear"){
 
-    train.fun <- function(X, y, lambda=NULL){
+    train.fun <- function(X, y,lambda=NULL){
       if(is.null(lambda)) lambda = "CV.min"
+      p = ncol(X)
       htheta <- if (lambda == "CV.min") {
-        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                                    intercept = intercept, standardize = T)
+        outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
+                            intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = outLas$lambda.min))
       } else if (lambda == "CV") {
-        outLas <- glmnet::cv.glmnet(X, y, family = "gaussian", alpha = 1,
-                                    intercept = intercept, standardize = T)
+        outLas <- cv.glmnet(X, y, family = "gaussian", alpha = 1,
+                            intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = outLas$lambda.1se))
       } else {
-        outLas <- glmnet::glmnet(X, y, family = "gaussian", alpha = 1,
-                                 intercept = intercept, standardize = T)
+        outLas <- glmnet(X, y, family = "gaussian", alpha = 1,
+                         intercept = intercept, standardize = T)
         as.vector(coef(outLas, s = lambda))
       }
       if(intercept==FALSE) htheta = htheta[2:(p+1)]
@@ -33,7 +34,7 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
       return(list(lasso.est = htheta))
     }
 
-    cond_var.fun <- function(pred, y){
+    cond_var.fun <- function(pred, y=NULL){
       n = length(y)
       sigma.sq = mean((y - pred)^2)
       return(rep(sigma.sq, n))
@@ -43,6 +44,7 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
 
     train.fun <- function(X, y, lambda=NULL){
       if(is.null(lambda)) lambda = "CV.min"
+      p = ncol(X)
       htheta <- if (lambda == "CV.min") {
         outLas <- cv.glmnet(X, y, family = "binomial", alpha = 1,
                             intercept = intercept, standardize = T)
@@ -84,7 +86,7 @@ relevant.funs <- function(intercept=TRUE, model=c("linear","logistic","logistic_
     deriv.fun = function(x) dnorm(x)
     weight.fun = function(x){
       out = c()
-      out[abs(x)<5]=(fp(x)/f(x)/(1-f(x)))[abs(x)<5]
+      out[abs(x)<5]=(deriv.fun(x)/pred.fun(x)/(1-pred.fun(x)))[abs(x)<5]
       out[abs(x)>5]=((abs(x)+sqrt(x^2+8/pi))/2)[abs(x)>5]
       return(out)
     }

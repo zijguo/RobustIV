@@ -6,13 +6,10 @@
 \usage{
 \method{summary}{SS}(object, ...)
 }
-\arguments{
-\item{object}{SS object}
-}
 \value{
-
+No return value, called for summary.
 }
 \description{
-Summary of SS
+Summary function for SearchingSampling
 }
 \keyword{internal}

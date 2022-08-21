@@ -58,7 +58,7 @@ As for tuning parameter in the 1st stage and 2nd stage, if do not specify, for m
 we adopt \eqn{\max{(\sqrt{2.01 \log p_z}, \sqrt{\log n})}} for both tuning parameters.
 }
 \examples{
-\dontrun{
+
 n = 500; L = 11; s = 3; k = 10; px = 10;
 alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
@@ -68,9 +68,9 @@ X = matrix(rnorm(n*px),n,px)
 epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 D =  0.5 + Z \%*\% gamma + X \%*\% psi + epsilon[,1]
 Y = -0.5 + Z \%*\% alpha + D * beta + X \%*\% phi + epsilon[,2]
-endo.test.model <- endo.test(Y,D,Z,X)
+endo.test.model <- endo.test(Y,D,Z,X,invalid = TRUE)
 summary(endo.test.model)
-}
+
 
 }
 \references{

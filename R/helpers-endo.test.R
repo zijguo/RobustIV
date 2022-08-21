@@ -1,9 +1,8 @@
 #' Summary of endotest
 #'
-#' @param object endotest object
-#' @param ...
+#' @description Summary function for endo.test
 #' @keywords internal
-#' @return
+#' @return No return value, called for summary.
 #' @export
 summary.endotest<- function(object,...){
   endotest <- object

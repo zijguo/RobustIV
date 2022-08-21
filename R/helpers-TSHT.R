@@ -173,10 +173,9 @@ TSHT.VHat <- function(n, ITT_Y, ITT_D, V.Gamma, V.gamma, C, voting = 'MaxClique'
 
 #' Summary of TSHT
 #'
-#' @param object TSHT object
-#' @param ...
+#' @description Summary function for TSHT
 #' @keywords internal
-#' @return
+#' @return No return value, called for summary.
 #' @export
 summary.TSHT <- function(object,...){
   TSHT1 <- object

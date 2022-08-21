@@ -6,13 +6,10 @@
 \usage{
 \method{summary}{TSHT}(object, ...)
 }
-\arguments{
-\item{object}{TSHT object}
-}
 \value{
-
+No return value, called for summary.
 }
 \description{
-Summary of TSHT
+Summary function for TSHT
 }
 \keyword{internal}

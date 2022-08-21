@@ -30,7 +30,7 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#'
 #' n = 500; L = 11; s = 3; k = 10; px = 10;
 #' alpha = c(rep(3,s),rep(0,L-s)); beta = 1; gamma = c(rep(1,k),rep(0,L-k))
 #' phi<-(1/px)*seq(1,px)+0.5; psi<-(1/px)*seq(1,px)+1
@@ -40,9 +40,9 @@
 #' epsilon = MASS::mvrnorm(n,rep(0,2),epsilonSigma)
 #' D =  0.5 + Z %*% gamma + X %*% psi + epsilon[,1]
 #' Y = -0.5 + Z %*% alpha + D * beta + X %*% phi + epsilon[,2]
-#' endo.test.model <- endo.test(Y,D,Z,X)
+#' endo.test.model <- endo.test(Y,D,Z,X,invalid = TRUE)
 #' summary(endo.test.model)
-#'}
+#'
 #'
 #' @references {
 #' Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), Testing endogeneity with high dimensional covariates, \emph{Journal of Econometrics}, Elsevier, vol. 207(1), pages 175-187. \cr

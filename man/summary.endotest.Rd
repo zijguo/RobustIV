@@ -6,13 +6,10 @@
 \usage{
 \method{summary}{endotest}(object, ...)
 }
-\arguments{
-\item{object}{endotest object}
-}
 \value{
-
+No return value, called for summary.
 }
 \description{
-Summary of endotest
+Summary function for endo.test
 }
 \keyword{internal}
