@@ -1,5 +1,5 @@
 # RobustIV
-This package provides functions for robust inference in the presence of potentially invalid instrumental variables, including the Two-Stage Hard Thresholding(TSHT) method, the Endogeneity Testing method, Searching-Sampling method, the Control Function method, and the SpotIV method.
+This package provides functions for Inference for the treatment effect with possibly invalid instrumental variables, including the Two-Stage Hard Thresholding(TSHT) method, the Endogeneity Testing method, and Searching-Sampling method.
 
 
 # Installation
@@ -14,23 +14,23 @@ library(RobustIV)
 
 # Low-dimensional Examples
 
-We use Mroz (1987) data to estimate the effect of education on log earnings. Here, the outcome Y is log earnings (lwage), the exposure D is years of schooling (educ), the candidates of instrument Z are father’s education (fatheduc), mother’s education (motheduc), husband’s education (huseduc), actual labor market experience (exper), its square (expersq), and the exogenous covariate X is age (age). We assume Y is a linear model of D,Z, and X, and D is a linear model of Z and X. 
+We use pseudodata provided by Youjin Lee, which is generated mimicing the structure of Framingham Heart Study data. We assume Y is a linear model of D,Z, and X, and D is a linear model of Z and X. 
 
 ## TSHT
 
 ```R
-> data(mroz)
-> Y <- mroz[,"lwage"]
-> D <- mroz[,"educ"]
-> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-> X <- mroz[,"age"]
+> data("lineardata")
+> Y <- lineardata[,"Y"]
+> D <- lineardata[,"D"]
+> Z <- as.matrix(lineardata[,c("Z.1","Z.2","Z.3","Z.4","Z.5","Z.6","Z.7","Z.8")])
+> X <- as.matrix(lineardata[,c("age","sex")])
 > TSHT.model <- TSHT(Y=Y,D=D,Z=Z,X=X)
 > summary(TSHT.model)
 
-Relevant IVs: motheduc fatheduc huseduc 
+Relevant IVs: Z.3 Z.4 Z.5 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
- betaHat    Std.Error  CI(2.5%)   CI(97.5%) Valid IVs                
- 0.08029083 0.02186046 0.03744511 0.1231365 motheduc fatheduc huseduc
+ betaHat    Std.Error  CI(2.5%) CI(97.5%)  Valid IVs  
+ 0.05166598 0.02015546 0.012162 0.09116995 Z.3 Z.4 Z.5
 
 ```
 ### Reference
@@ -39,143 +39,31 @@ Guo, Z., Kang, H., Tony Cai, T. and Small, D.S. (2018), [Confidence intervals fo
 ## Searching-Sampling
 
 ```R
-> Y <- mroz[,"lwage"]
-> D <- mroz[,"educ"]
-> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-> X <- mroz[,"age"]
+> Y <- lineardata[,"Y"]
+> D <- lineardata[,"D"]
+> Z <- as.matrix(lineardata[,c("Z.1","Z.2","Z.3","Z.4","Z.5","Z.6","Z.7","Z.8")])
+> X <- as.matrix(lineardata[,c("age","sex")])
 > Searching.model <- SearchingSampling(Y,D,Z,X, Sampling = FALSE)
 > summary(Searching.model)
 
-Initial set of Valid Instruments: motheduc fatheduc huseduc 
+Initial set of Valid Instruments: Z.3 Z.4 Z.5 
 
 Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval for Beta: [-0.2850882,0.2687119]
+Confidence Interval for Beta: [-0.0356797,0.1422332]
 > Sampling.model <- SearchingSampling(Y,D,Z,X)
 > summary(Sampling.model)
 
-Initial set of Valid Instruments: motheduc fatheduc huseduc 
+Initial set of Valid Instruments: Z.3 Z.4 Z.5 
 
 Plurality rule holds.
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-Confidence Interval for Beta: [-0.1268596,0.2423405]
+Confidence Interval for Beta: [-0.02297164,0.1295251]
 ```
 ### Reference
 Guo, Z. (2021), [Causal  Inference  with  Invalid  Instruments: Post-selection Problems and A Solution Using Searching and Sampling](https://arxiv.org/abs/2104.06911), Preprint arXiv:2104.06911.
-
-
-## Control function method
-We use the control function method in additive model with continuous outcome and valid IVs.
-```R
-> Y <- mroz[,"lwage"]
-> D <- mroz[,"educ"]
-> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc")])
-> X <- as.matrix(mroz[,c("exper","expersq","age")])
-> cf.model <- cf(Y~D+I(D^2)+X|Z+I(Z^2)+X)
-> summary(cf.model)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Coefficients of Control Function Estimators:
-
-              Estimate    Std.Err t value Pr(>|t|)    
-(Intercept)  1.2573907  0.7871438   1.597 0.055457 .  
-D           -0.1434395  0.1102058   1.302 0.096884 .  
-I(D^2)       0.0086426  0.0041004   2.108 0.017817 *  
-Xexper       0.0438690  0.0131574   3.334 0.000465 ***
-Xexpersq    -0.0008713  0.0003984   2.187 0.014631 *  
-Xage        -0.0011636  0.0048634   0.239 0.405511    
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-The causal effect when changing treatment from 12 to 13 :  0.07262563 
-
-> pretest.model <- pretest(Y~D+I(D^2)+X|Z+I(Z^2)+X)
-> summary(pretest.model)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Hausman Statistic :  1.313563 
-
-P value =  0.2517505 
-
-H0 : Augmented instrumental variables from Control function are valid, is not rejected. 
-
-Level 0.05 Pretest estimator is Control function estimator. 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-Coefficients of Pretest Estimators:
-
-              Estimate    Std.Err t value Pr(>|t|)    
-(Intercept)  1.2573907  0.7871438   1.597 0.055457 .  
-D           -0.1434395  0.1102058   1.302 0.096884 .  
-I(D^2)       0.0086426  0.0041004   2.108 0.017817 *  
-Xexper       0.0438690  0.0131574   3.334 0.000465 ***
-Xexpersq    -0.0008713  0.0003984   2.187 0.014631 *  
-Xage        -0.0011636  0.0048634   0.239 0.405511    
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-```
-
-### References
-Guo, Z. and D. S. Small (2016), [Control function instrumental variable estimation of nonlinear
-causal effect models](https://www.jmlr.org/papers/volume17/14-379/14-379.pdf), The Journal of Machine Learning Research 17(1), 3448–3482.
-
-
-## SpotIV and ProbitControl
-
-```R
-> Y <- mroz[,"lwage"]
-> D <- mroz[,"educ"]
-> Z <- as.matrix(mroz[,c("motheduc","fatheduc","huseduc","exper","expersq")])
-> X <- mroz[,"age"]
-> Y0 <- as.numeric((Y>median(Y)))
-> d2 = median(D); d1 = d2+1;
-> w0 = apply(cbind(Z,X)[which(D == d2),], 2, mean)
-> SpotIV.model <- SpotIV(Y0,D,Z[,-5],X,d1 = d1,d2 = d2,w0 = w0[-5], invalid = TRUE)
-> summary(SpotIV.model)
-
-Relevant Instruments: motheduc fatheduc huseduc 
-
-Valid Instruments: motheduc fatheduc huseduc 
- 
-Thus, Majority rule holds. 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-BetaHat: 0.8791451 
-
-CATEHat: 0.1298192 
-
-Standard error of CATEHat: 0.3007202 
-
-95% Confidence Interval for CATE: [-0.4595816,0.71922]
-```
-
-```R
-> Probit.model <- ProbitControl(Y0,D,Z,X,d1 = d1,d2 = d2,w0 = w0,invalid = T)
-> summary(Probit.model)
-
-Relevant Instruments: motheduc fatheduc huseduc 
-
-Valid Instruments: motheduc fatheduc huseduc 
- 
-Thus, Majority rule holds. 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-BetaHat: 0.2118909 
-
-Standard error of BetaHat: 0.0671424 
-
-95% Confidence Interval for Beta: [0.08029418,0.3434876]
-
-CATEHat: 0.08435024 
-
-Standard error of CATEHat: 0.02592536 
-
-95% Confidence Interval for CATE: [0.03353747,0.135163]
-```
-
-### Reference
-Li, S., Guo, Z. (2020), [Causal Inference for Nonlinear Outcome Models with Possibly Invalid Instrumental Variables](https://arxiv.org/abs/2010.09922), Preprint arXiv:2010.09922.
 
 # High-dimensional examples (Simulated data)
 In this section, we consider the following linear models.
