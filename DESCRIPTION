@@ -1,7 +1,7 @@
 Package: RobustIV
 Type: Package
 Title: Robust Instrumental Variable Methods in Linear Models
-Version: 0.2.4
+Version: 0.3.1
 Authors@R: 
   c(person(given = "Taehyeon",
            family = "Koo",
@@ -18,12 +18,12 @@ Authors@R:
     person(given = "Zijian",
            family = "Guo",
            role = c("aut","cre","cph"),
-           email = "zijguo@stat.rutgers.edu"))
+           email = "zijguo@zju.edu.cn"))
 Description: Inference for the treatment effect with possibly invalid instrumental variables via TSHT('Guo et al.' (2016) <arXiv:1603.05224>) and SearchingSampling('Guo' (2021) <arXiv:2104.06911>), which are effective for both low- and high-dimensional covariates and instrumental variables; test of endogeneity in high dimensions ('Guo et al.' (2016) <arXiv:1609.06713>).
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.3.2
 URL: https://github.com/zijguo/RobustIV
 Imports: glmnet, MASS, Matrix, igraph, intervals, CVXR
 NeedsCompilation: no

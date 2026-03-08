@@ -38,9 +38,9 @@ Direction_fixedtuning <- function(X, loading, mu = NULL, weight = NULL, deriv.ve
   v <- CVXR::Variable(pp+1)
   obj <- 1/4*sum(((X%*%H%*%v)^2)*weight*deriv.vec)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob <- CVXR::Problem(CVXR::Minimize(obj))
-  result <- CVXR::solve(prob)
+  result <- CVXR::psolve(prob)
   if(result$status=="optimal" || result$status == "unbounded"){
-    opt.sol<-result$getValue(v)
+    opt.sol<-value(v)
     cvxr_status<-result$status
     direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
   }else{
@@ -97,13 +97,13 @@ Direction_searchtuning <- function(X, loading, weight = NULL, deriv.vec = NULL, 
     obj <- 1/4*sum(((X%*%H%*%v)^2)*weight*deriv.vec)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
 
     prob <- CVXR::Problem(CVXR::Minimize(obj))
-    result <- CVXR::solve(prob)
+    result <- CVXR::psolve(prob)
     cvxr_status <- result$status
     if(tryno == 1){
       if(cvxr_status == "optimal"){
         incr = 0
         mu=mu/resol
-        opt.sol <- result$getValue(v)
+        opt.sol <- value(v)
         temp.vec <- (-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
         initial.sd <- sqrt(sum(((X%*% temp.vec)^2)*weight*deriv.vec)/(n)^2)*loading.norm
         temp.sd <- initial.sd
@@ -114,7 +114,7 @@ Direction_searchtuning <- function(X, loading, weight = NULL, deriv.vec = NULL, 
     } else {
       if(incr == 1){
         if(cvxr_status == "optimal"){
-          opt.sol <- result$getValue(v)
+          opt.sol <- value(v)
           lamstop <- 1
         } else {
           mu <- mu*resol
@@ -122,7 +122,7 @@ Direction_searchtuning <- function(X, loading, weight = NULL, deriv.vec = NULL, 
       } else {
         if(cvxr_status == "optimal" && temp.sd < 3*initial.sd){
           mu <- mu/resol
-          opt.sol <- result$getValue(v)
+          opt.sol <- value(v)
           temp.vec <- (-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
 
           temp.sd <- sqrt(sum(((X%*% temp.vec)^2)*weight*deriv.vec)/(n)^2)*loading.norm
